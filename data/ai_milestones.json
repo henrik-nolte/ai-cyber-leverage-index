@@ -1,0 +1,110 @@
+[
+  {
+    "date": "2021-01-01",
+    "label": "GitHub Copilot private beta",
+    "category": "coding_tool",
+    "description": "First widely-used AI coding assistant; generates code completions inline in VS Code."
+  },
+  {
+    "date": "2022-11-30",
+    "label": "ChatGPT public launch",
+    "category": "general_ai",
+    "description": "OpenAI's ChatGPT reaches 1 million users in 5 days. Marks the threshold at which LLMs become mainstream tools, including for security research."
+  },
+  {
+    "date": "2023-02-07",
+    "label": "Bing Chat (GPT-4 integrated)",
+    "category": "general_ai",
+    "description": "Microsoft integrates GPT-4 into Bing, beginning mass deployment of frontier AI to general users."
+  },
+  {
+    "date": "2023-03-14",
+    "label": "GPT-4 public release",
+    "category": "general_ai",
+    "description": "Significant capability step-change. First model to pass bar exam at ~90th percentile and demonstrate advanced code reasoning."
+  },
+  {
+    "date": "2023-05-10",
+    "label": "Google Bard GA",
+    "category": "general_ai",
+    "description": "Google releases Bard publicly, intensifying LLM competition and further democratizing access."
+  },
+  {
+    "date": "2023-06-01",
+    "label": "GitHub Copilot Chat GA",
+    "category": "coding_tool",
+    "description": "Copilot gains conversational coding interface. Security researchers begin using it for vulnerability analysis."
+  },
+  {
+    "date": "2023-07-01",
+    "label": "WormGPT / FraudGPT reported",
+    "category": "malicious_ai",
+    "description": "First documented attacker-optimized LLMs appear on dark web forums, specifically marketed for phishing email generation and exploit assistance."
+  },
+  {
+    "date": "2023-07-11",
+    "label": "Claude 2",
+    "category": "general_ai",
+    "description": "Anthropic releases Claude 2 with 100k context window — first viable frontier competitor to GPT-4."
+  },
+  {
+    "date": "2023-11-06",
+    "label": "GPT-4 Turbo",
+    "category": "general_ai",
+    "description": "Cost drops ~3x from GPT-4. Lower cost substantially reduces the economic barrier for AI-assisted attacker automation."
+  },
+  {
+    "date": "2024-02-15",
+    "label": "Gemini 1.5 Pro",
+    "category": "general_ai",
+    "description": "Google's Gemini 1.5 Pro introduces 1M context window — large enough to analyze entire codebases for vulnerabilities in a single prompt."
+  },
+  {
+    "date": "2024-03-04",
+    "label": "Claude 3 Opus",
+    "category": "general_ai",
+    "description": "Anthropic releases Claude 3 family. Opus exceeds GPT-4 on multiple benchmarks including code analysis."
+  },
+  {
+    "date": "2024-05-13",
+    "label": "GPT-4o",
+    "category": "general_ai",
+    "description": "GPT-4 level capabilities at reduced cost and higher speed. Significantly lowers cost of API-driven security automation."
+  },
+  {
+    "date": "2024-06-01",
+    "label": "GitHub Copilot Workspace",
+    "category": "coding_tool",
+    "description": "AI begins autonomous multi-file code editing tasks without human guidance at each step — first agentic coding capability at scale."
+  },
+  {
+    "date": "2024-10-22",
+    "label": "Claude 3.5 Sonnet",
+    "category": "general_ai",
+    "description": "Outperforms Claude 3 Opus on most tasks at lower cost. Rapid capability iteration continues."
+  },
+  {
+    "date": "2025-01-20",
+    "label": "OpenAI o3",
+    "category": "general_ai",
+    "description": "Reasoning model with qualitatively improved code and mathematics. First model to score >85% on competitive programming benchmarks."
+  },
+  {
+    "date": "2025-03-01",
+    "label": "Agentic AI security tools (first enterprise deployments)",
+    "category": "security_ai",
+    "description": "First generation of autonomous AI penetration testing tools reach enterprise buyers. AI agents begin conducting vulnerability research without continuous human supervision."
+  },
+  {
+    "date": "2025-05-01",
+    "label": "AI-generated CVE filings documented",
+    "category": "security_ai",
+    "description": "Multiple CNAs begin publicly acknowledging use of AI tools in their vulnerability discovery pipelines, creating a measurable CNA attribution shift."
+  },
+  {
+    "date": "2026-01-01",
+    "label": "Autonomous AI security agents (widespread)",
+    "category": "security_ai",
+    "description": "AI agents operating with minimal human oversight in both offensive (red team) and defensive (SOC) roles become common in large organizations."
+  }
+]
