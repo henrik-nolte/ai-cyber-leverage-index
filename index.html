@@ -316,6 +316,30 @@
     .i-skeptic .interp-tag { color: var(--orange); }
 
     /* ============================================================
+       OBSERVATION BOX
+    ============================================================ */
+    .observation {
+      background: rgba(255,255,255,0.028);
+      border-left: 3px solid var(--orange);
+      border-radius: 0 5px 5px 0;
+      padding: 0.9rem 1.2rem;
+      margin: 1.4rem 0 0.4rem;
+      font-size: 0.87rem;
+      color: var(--text-2);
+      line-height: 1.65;
+    }
+    .observation-label {
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--orange);
+      display: block;
+      margin-bottom: 0.45rem;
+    }
+    .observation strong { color: var(--text); }
+
+    /* ============================================================
        CALLOUT
     ============================================================ */
     .callout {
@@ -554,6 +578,7 @@
       <div class="loading" id="ld-1"><div class="spinner"></div><span>Loading NVD data…</span></div>
       <div id="c1" style="display:none; width:100%; height:340px;"></div>
     </div>
+    <div id="obs-1" class="observation" style="display:none;"><span class="observation-label">Observation</span></div>
     <div class="interp-row">
       <div class="interp-box i-accel">
         <span class="interp-tag">Accelerationist reads this as…</span>
@@ -596,6 +621,7 @@
       <div class="loading" id="ld-2"><div class="spinner"></div><span>Loading severity data…</span></div>
       <div id="c2" style="display:none; width:100%; height:340px;"></div>
     </div>
+    <div id="obs-2" class="observation" style="display:none;"><span class="observation-label">Observation</span></div>
     <div class="interp-row">
       <div class="interp-box i-accel">
         <span class="interp-tag">Accelerationist reads this as…</span>
@@ -642,6 +668,7 @@
       <div class="loading" id="ld-3"><div class="spinner"></div><span>Loading CISA KEV data…</span></div>
       <div id="c3" style="display:none; width:100%; height:340px;"></div>
     </div>
+    <div id="obs-3" class="observation" style="display:none;"><span class="observation-label">Observation</span></div>
     <div class="interp-row">
       <div class="interp-box i-accel">
         <span class="interp-tag">Accelerationist reads this as…</span>
@@ -688,6 +715,7 @@
       <div class="loading" id="ld-4"><div class="spinner"></div><span>Loading attribution data…</span></div>
       <div id="c4" style="display:none; width:100%; height:340px;"></div>
     </div>
+    <div id="obs-4" class="observation" style="display:none;"><span class="observation-label">Observation</span></div>
     <div class="interp-row">
       <div class="interp-box i-accel">
         <span class="interp-tag">Accelerationist reads this as…</span>
@@ -807,6 +835,7 @@
     <div class="chart-wrap">
       <div id="c5" style="width:100%; height:280px;"></div>
     </div>
+    <div id="obs-5" class="observation" style="display:none;"><span class="observation-label">Observation</span></div>
   </section>
 
   <!-- ======================================================
@@ -834,6 +863,7 @@
       <div id="ld-s1" class="chart-loader">Loading Exploit-DB data…</div>
       <div id="cs1" style="width:100%; height:320px; display:none;"></div>
     </div>
+    <div id="obs-s1" class="observation" style="display:none;"><span class="observation-label">Observation</span></div>
     <div class="interp-row" style="margin-top:1rem;">
       <div class="interp-box i-accel">
         <span class="interp-tag">Accelerationist reads this as…</span>
@@ -868,6 +898,7 @@
       <div id="ld-s2" class="chart-loader">Loading EPSS data…</div>
       <div id="cs2" style="width:100%; height:320px; display:none;"></div>
     </div>
+    <div id="obs-s2" class="observation" style="display:none;"><span class="observation-label">Observation</span></div>
     <div class="interp-row" style="margin-top:1rem;">
       <div class="interp-box i-accel">
         <span class="interp-tag">Accelerationist reads this as…</span>
@@ -902,6 +933,7 @@
       <div id="ld-s3" class="chart-loader">Loading GitHub Advisory data…</div>
       <div id="cs3" style="width:100%; height:320px; display:none;"></div>
     </div>
+    <div id="obs-s3" class="observation" style="display:none;"><span class="observation-label">Observation</span></div>
     <div class="interp-row" style="margin-top:1rem;">
       <div class="interp-box i-accel">
         <span class="interp-tag">Accelerationist reads this as…</span>
@@ -1097,49 +1129,79 @@ function rollAvg(arr, w) {
 }
 
 // ───────────────────────────────────────────────────
+// Seeded pseudo-random number generator (Mulberry32)
+// Using a fixed seed guarantees sample data is identical
+// on every page load, so the ACLI score never changes
+// between refreshes when real data hasn't been fetched yet.
+// ───────────────────────────────────────────────────
+function makeSeededRng(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s += 0x6D2B79F5;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 0xFFFFFFFF;
+  };
+}
+
+// ───────────────────────────────────────────────────
 // Sample / fallback data
 // Generated once; replaced by real data after first NVD fetch
 // ───────────────────────────────────────────────────
 function makeSampleData() {
+  // NVD has CVE records from 1988 (first CVE: CVE-1988-3643).
+  // The CVE programme formally launched September 1999; pre-1999 entries are sparse
+  // retroactive additions. Exploit-DB began as milw0rm ~2004. GHSA launched Sep 2020.
   const yearTotals = {
-    1999:1300,2000:1700,2001:2400,2002:2200,2003:1700,
-    2004:2700,2005:5000,2006:6600,2007:7000,2008:5600,
-    2009:5800,2010:4700,2011:4200,2012:5300,2013:5200,
-    2014:7900,2015:6500,2016:6500,2017:14700,2018:16600,
-    2019:17300,2020:18300,2021:20100,2022:25100,2023:28900,
-    2024:38000,2025:42000
+    // Pre-CVE-programme era: sparse retroactive NVD entries
+    1988:22,  1989:31,  1990:48,  1991:65,  1992:90,
+    1993:125, 1994:210, 1995:340, 1996:510, 1997:1010, 1998:1120,
+    // CVE programme launched Sep 1999 — systematic tracking begins
+    1999:1300, 2000:1700, 2001:2400, 2002:2200, 2003:1700,
+    2004:2700, 2005:5000, 2006:6600, 2007:7000, 2008:5600,
+    2009:5800, 2010:4700, 2011:4200, 2012:5300, 2013:5200,
+    2014:7900, 2015:6500, 2016:6500,
+    // 2017 spike: NIST backfilling + expanded CNA programme
+    2017:14700, 2018:16600, 2019:17300, 2020:18300,
+    // AI-era acceleration
+    2021:20100, 2022:25100, 2023:28900, 2024:38000, 2025:42000
   };
-  // Approximate annual exploit-db publication counts (public exploits)
+  // Exploit-DB: began as milw0rm ~2004, became exploit-db.com Nov 2009
   const edbYear = {
-    2003:180,2004:350,2005:480,2006:580,2007:680,2008:750,2009:830,
-    2010:900,2011:920,2012:870,2013:820,2014:900,2015:960,2016:1050,
-    2017:1100,2018:1150,2019:1200,2020:1100,2021:1050,2022:1000,
-    2023:980,2024:950,2025:920
+    2004:180, 2005:350, 2006:480, 2007:620, 2008:750, 2009:830,
+    2010:900, 2011:920, 2012:870, 2013:820, 2014:900, 2015:960,
+    2016:1050, 2017:1100, 2018:1150, 2019:1200, 2020:1100,
+    2021:1050, 2022:1000, 2023:980, 2024:950, 2025:920
   };
-  // Approximate annual GitHub Security Advisory counts
+  // GitHub Security Advisories: database launched Sep 2020 (npm data);
+  // community contributions opened Feb 2022
   const ghsaYear = {
-    2017:200,2018:400,2019:800,2020:1400,2021:2000,2022:2800,
-    2023:3600,2024:4400,2025:4800
+    2020:300, 2021:1800, 2022:3200, 2023:4000, 2024:4600, 2025:5000
   };
   const out = [];
-  const rng = (v, spread) => v + (Math.random() - 0.5) * spread;
-  for (let yr = 1999; yr <= 2025; yr++) {
+  const rand = makeSeededRng(0xACL1_2026);   // fixed seed → same data every load
+  const rng  = (v, spread) => v + (rand() - 0.5) * spread;
+  for (let yr = 1988; yr <= 2025; yr++) {
     for (let mo = 1; mo <= 12; mo++) {
       if (yr === 2025 && mo > 11) continue;
       const base    = (yearTotals[yr] || 10000) / 12;
-      const total   = Math.max(10, Math.round(rng(base, base * 0.3)));
-      const hiPct   = Math.min(78, Math.max(22, rng(36 + (yr-1999)*0.45, 7)));
-      const instPct = Math.min(55, Math.max(4,  rng(8  + Math.max(0,(yr-2008)*0.9), 5)));
+      const total   = Math.max(1, Math.round(rng(base, base * 0.3)));
+      // Severity % only meaningful once CVSS scoring was established (~2005)
+      const hiPct   = yr >= 2005
+        ? Math.min(78, Math.max(22, rng(36 + (yr-2005)*0.4, 7)))
+        : Math.min(50, Math.max(10, rng(20 + (yr-1988)*1.5, 8)));
+      const instPct = Math.min(55, Math.max(1, rng(3 + Math.max(0,(yr-2005)*1.1), 5)));
       const kev     = yr >= 2022 ? Math.max(0, Math.round(rng(10 + (yr-2022)*5, 8))) : 0;
 
-      // Exploit-DB: monthly count with CVE cross-reference rate growing over time
-      const edbBase = ((edbYear[yr] || 1000) / 12);
-      const edbCount = yr >= 2003 ? Math.max(0, Math.round(rng(edbBase, edbBase * 0.35))) : 0;
-      const edbCvePct = yr >= 2003 ? Math.min(85, Math.max(10, rng(25 + (yr-2003)*1.2, 8))) : 0;
+      // Exploit-DB: starts 2004
+      const edbBase   = ((edbYear[yr] || 0) / 12);
+      const edbCount  = yr >= 2004 ? Math.max(0, Math.round(rng(edbBase, edbBase * 0.35))) : 0;
+      const edbCvePct = yr >= 2004 ? Math.min(85, Math.max(10, rng(18 + (yr-2004)*1.4, 8))) : 0;
 
-      // GitHub Advisories: monthly count (starts 2017)
-      const ghsaBase = ((ghsaYear[yr] || 0) / 12);
-      const ghsaCount = yr >= 2017 ? Math.max(0, Math.round(rng(ghsaBase, ghsaBase * 0.25))) : 0;
+      // GitHub Advisories: starts Sep 2020
+      const ghsaBase  = ((ghsaYear[yr] || 0) / 12);
+      const ghsaCount = (yr > 2020 || (yr === 2020 && mo >= 9))
+        ? Math.max(0, Math.round(rng(ghsaBase, ghsaBase * 0.25))) : 0;
 
       // EPSS: snapshot stats (available from 2021-05 onwards)
       // avg EPSS score ~0.01–0.04; % with score ≥ 0.10 roughly 9–14%
@@ -1192,6 +1254,7 @@ function renderVolume(data) {
   };
   show('ld-1','c1');
   Plotly.newPlot('c1', traces, layout, { responsive:true, displayModeBar:false });
+  setObs('obs-1', obsVolume(data));
 }
 
 // ───────────────────────────────────────────────────
@@ -1214,6 +1277,7 @@ function renderSeverity(data) {
   };
   show('ld-2','c2');
   Plotly.newPlot('c2', traces, layout, { responsive:true, displayModeBar:false });
+  setObs('obs-2', obsSeverity(data));
 }
 
 // ───────────────────────────────────────────────────
@@ -1239,6 +1303,7 @@ function renderKEV(data) {
   };
   show('ld-3','c3');
   Plotly.newPlot('c3', traces, layout, { responsive:true, displayModeBar:false });
+  setObs('obs-3', obsKEV(data));
 }
 
 // ───────────────────────────────────────────────────
@@ -1262,6 +1327,7 @@ function renderCNA(data) {
   };
   show('ld-4','c4');
   Plotly.newPlot('c4', traces, layout, { responsive:true, displayModeBar:false });
+  setObs('obs-4', obsCNA(data));
 }
 
 // ───────────────────────────────────────────────────
@@ -1294,6 +1360,7 @@ function renderExploitDB(data) {
   };
   show('ld-s1','cs1');
   Plotly.newPlot('cs1', traces, layout, { responsive:true, displayModeBar:false });
+  setObs('obs-s1', obsExploitDB(data));
 }
 
 // ───────────────────────────────────────────────────
@@ -1325,6 +1392,7 @@ function renderEPSS(data) {
   };
   show('ld-s2','cs2');
   Plotly.newPlot('cs2', traces, layout, { responsive:true, displayModeBar:false });
+  setObs('obs-s2', obsEPSS(data));
 }
 
 // ───────────────────────────────────────────────────
@@ -1353,6 +1421,179 @@ function renderGHSA(data) {
   };
   show('ld-s3','cs3');
   Plotly.newPlot('cs3', traces, layout, { responsive:true, displayModeBar:false });
+  setObs('obs-s3', obsGHSA(data));
+}
+
+// ───────────────────────────────────────────────────
+// Observation helpers
+// ───────────────────────────────────────────────────
+
+function setObs(id, html) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // Keep the label, append the text
+  el.innerHTML = '<span class="observation-label">Observation</span>' + html;
+  el.style.display = 'block';
+}
+
+function fmt(n) { return Math.round(n).toLocaleString(); }
+function pct(n)  { return (n >= 0 ? '+' : '') + n.toFixed(1) + '%'; }
+
+function obsVolume(data) {
+  const byYear = {};
+  data.forEach(d => { const y = d.month.slice(0,4); byYear[y] = (byYear[y]||0) + d.cve_total; });
+  const curY  = String(new Date().getFullYear());
+  const yrs   = Object.keys(byYear).sort().filter(y => y !== curY);
+  const last  = yrs[yrs.length - 1];
+  const prev  = yrs[yrs.length - 2];
+
+  // Pre-Copilot 3-year avg (2019–2021) vs post (2022–last complete)
+  const preCopilot  = ['2019','2020','2021'].filter(y => byYear[y]).map(y => byYear[y]);
+  const postCopilot = yrs.filter(y => y >= '2022').map(y => byYear[y]);
+  const preAvg      = preCopilot.reduce((a,b)=>a+b,0) / preCopilot.length;
+  const postAvg     = postCopilot.reduce((a,b)=>a+b,0) / postCopilot.length;
+  const change      = ((postAvg - preAvg) / preAvg * 100).toFixed(0);
+
+  // Year-on-year growth last complete year
+  const yoyPct = ((byYear[last] - byYear[prev]) / byYear[prev] * 100).toFixed(0);
+
+  // Biggest single-year jump
+  let bigJumpYr = '', bigJump = 0;
+  for (let i = 1; i < yrs.length; i++) {
+    const g = (byYear[yrs[i]] - byYear[yrs[i-1]]) / byYear[yrs[i-1]];
+    if (g > bigJump) { bigJump = g; bigJumpYr = yrs[i]; }
+  }
+
+  return `The annual count of published CVEs has risen <strong>${change}% on average</strong> since the GitHub Copilot beta launched in 2021 (pre-Copilot avg: ~${fmt(preAvg)}/yr → post-2022 avg: ~${fmt(postAvg)}/yr). ` +
+    `Year-on-year growth in ${last} was <strong>${yoyPct >= 0 ? '+' : ''}${yoyPct}%</strong>. ` +
+    `The steepest single-year jump in the dataset was <strong>${bigJumpYr}</strong> (+${(bigJump*100).toFixed(0)}%), driven by NIST expanding the CNA programme and backfilling older entries — a reminder that volume alone is not a clean signal.`;
+}
+
+function obsSeverity(data) {
+  const pre  = data.filter(d => d.month < '2022-01' && d.high_critical_pct > 0).map(d => d.high_critical_pct);
+  const post = data.filter(d => d.month >= '2022-01').map(d => d.high_critical_pct);
+  if (!pre.length || !post.length) return '';
+  const preAvg  = pre.reduce((a,b)=>a+b,0)  / pre.length;
+  const postAvg = post.reduce((a,b)=>a+b,0) / post.length;
+  const delta   = (postAvg - preAvg).toFixed(1);
+  const dir     = delta > 0 ? 'risen' : 'fallen';
+
+  // Find the year with highest HC%
+  const byYr = {};
+  data.forEach(d => { const y = d.month.slice(0,4); byYr[y] = (byYr[y]||[]).concat(d.high_critical_pct); });
+  let peakYr = '', peakVal = 0;
+  Object.entries(byYr).forEach(([y, vals]) => {
+    const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+    if (avg > peakVal) { peakVal = avg; peakYr = y; }
+  });
+
+  return `The share of CVEs rated High or Critical has <strong>${dir} by ${Math.abs(delta)} percentage points</strong> since 2022 (pre-2022 avg: ${preAvg.toFixed(1)}% → post-2022 avg: ${postAvg.toFixed(1)}%). ` +
+    `The peak year for severe CVEs in the dataset was <strong>${peakYr}</strong> (avg ${peakVal.toFixed(1)}%). ` +
+    `Note that CVSS scoring was not widely applied before ~2005 and scoring inflation — where vendors assign higher scores to attract attention — has been documented as a confounding factor.`;
+}
+
+function obsKEV(data) {
+  const kevData = data.filter(d => d.kev_additions > 0);
+  if (!kevData.length) return '';
+  const total   = kevData.reduce((s,d) => s+d.kev_additions, 0);
+  const monthly = total / kevData.length;
+
+  // Peak month
+  const peak    = kevData.reduce((best,d) => d.kev_additions > best.kev_additions ? d : best, kevData[0]);
+
+  // Recent 6-month avg vs first 6 months
+  const first6  = kevData.slice(0,6).reduce((s,d)=>s+d.kev_additions,0)/6;
+  const last6   = kevData.slice(-6).reduce((s,d)=>s+d.kev_additions,0)/6;
+  const trend   = last6 > first6*1.15 ? 'accelerating' : last6 < first6*0.85 ? 'slowing' : 'holding steady';
+
+  return `Since CISA launched the KEV catalog in November 2021, <strong>${fmt(total)} CVEs</strong> have been confirmed as actively exploited in the wild — an average of <strong>${monthly.toFixed(0)} per month</strong>. ` +
+    `The busiest single month was <strong>${peak.month}</strong> (${peak.kev_additions} additions). ` +
+    `The pace of new confirmed exploits is <strong>${trend}</strong> compared to the catalog's first six months — this is the most direct attacker-activity signal in the ACLI.`;
+}
+
+function obsCNA(data) {
+  const early  = data.filter(d => d.month >= '2010-01' && d.month < '2016-01' && d.institutional_cna_pct > 0);
+  const recent = data.filter(d => d.month >= '2020-01' && d.institutional_cna_pct > 0);
+  if (!early.length || !recent.length) return '';
+  const earlyAvg  = early.reduce((s,d)=>s+d.institutional_cna_pct,0)/early.length;
+  const recentAvg = recent.reduce((s,d)=>s+d.institutional_cna_pct,0)/recent.length;
+  const gain      = (recentAvg - earlyAvg).toFixed(1);
+
+  return `The share of CVEs filed by major institutional CNAs (Google, Microsoft, Apple, Cisco, etc.) has grown from ~${earlyAvg.toFixed(1)}% in the early 2010s to ~${recentAvg.toFixed(1)}% recently — a gain of <strong>${gain} percentage points</strong>. ` +
+    `This reflects the steady expansion of NIST's CNA programme and large tech companies building dedicated security research teams. ` +
+    `A rising institutional share is interpreted as a defender-strengthening signal: organisations are proactively finding their own flaws before adversaries do.`;
+}
+
+function obsComposite(years, scores, byYear) {
+  const curY = String(new Date().getFullYear());
+  const completeYrs = years.filter(y => y !== curY);
+  const lastYr = completeYrs[completeYrs.length - 1];
+  const lastScore = scores[years.indexOf(lastYr)];
+
+  // Find year of max signal (absolute)
+  let maxYr = '', maxAbs = 0;
+  completeYrs.forEach((y, i) => {
+    if (Math.abs(scores[years.indexOf(y)]) > maxAbs) { maxAbs = Math.abs(scores[years.indexOf(y)]); maxYr = y; }
+  });
+  const maxScore  = scores[years.indexOf(maxYr)];
+  const maxDir    = maxScore > 0 ? 'Safetyist' : 'Accelerationist';
+  const curDir    = lastScore > 0.5 ? 'Safetyist' : lastScore < -0.5 ? 'Accelerationist' : 'ambiguous (Skeptic-consistent)';
+
+  // Count post-2022 years in each direction
+  const aiEra = completeYrs.filter(y => y >= '2022');
+  const nSafe = aiEra.filter(y => scores[years.indexOf(y)] > 0).length;
+  const nAccel = aiEra.filter(y => scores[years.indexOf(y)] < 0).length;
+
+  return `The composite ACLI for <strong>${lastYr}</strong> sits at <strong>${lastScore >= 0 ? '+' : ''}${lastScore.toFixed(2)}</strong>, placing it in the <strong>${curDir}</strong> range. ` +
+    `The strongest signal in the dataset came in <strong>${maxYr}</strong> (${maxScore >= 0 ? '+' : ''}${maxScore.toFixed(2)}, ${maxDir} lean). ` +
+    `In the AI era (2022–${lastYr}), ${nSafe} year${nSafe!==1?'s':''} lean Safetyist and ${nAccel} lean Accelerationist — no sustained directional break is yet visible, which the Skeptic camp would count as a point in their favour.`;
+}
+
+function obsExploitDB(data) {
+  const edb = data.filter(d => d.exploitdb_count > 0);
+  if (!edb.length) return '';
+  const total  = edb.reduce((s,d)=>s+d.exploitdb_count,0);
+  const peak   = edb.reduce((best,d) => d.exploitdb_count > best.exploitdb_count ? d : best, edb[0]);
+  const byYr   = {};
+  edb.forEach(d => { const y = d.month.slice(0,4); byYr[y] = (byYr[y]||0) + d.exploitdb_count; });
+  const yrs    = Object.keys(byYr).sort();
+  const last   = yrs[yrs.length-1]; const prev = yrs[yrs.length-2];
+  const yoyPct = ((byYr[last] - byYr[prev]) / byYr[prev] * 100).toFixed(0);
+  const recentCvePct = edb.slice(-12).reduce((s,d)=>s+d.exploitdb_with_cve_pct,0) / Math.min(12, edb.length);
+
+  return `Exploit-DB has catalogued <strong>${fmt(total)} public exploits</strong> since 2004, with the busiest month being <strong>${peak.month}</strong> (${peak.exploitdb_count} entries). ` +
+    `Year-on-year change in ${last} was <strong>${yoyPct >= 0 ? '+' : ''}${yoyPct}%</strong>. ` +
+    `In recent months, <strong>${recentCvePct.toFixed(0)}%</strong> of published exploits carry an explicit CVE reference, making them directly matchable to NVD records and automated patching workflows.`;
+}
+
+function obsEPSS(data) {
+  const ep = data.filter(d => d.epss_avg !== null && d.epss_avg !== undefined);
+  if (ep.length < 3) return '';
+  const first3Avg  = ep.slice(0,3).reduce((s,d)=>s+d.epss_avg,0)/3;
+  const last3Avg   = ep.slice(-3).reduce((s,d)=>s+d.epss_avg,0)/3;
+  const dir        = last3Avg > first3Avg*1.05 ? 'risen' : last3Avg < first3Avg*0.95 ? 'fallen' : 'remained stable';
+  const latestHR   = ep[ep.length-1].epss_high_risk_pct?.toFixed(1) ?? '—';
+  const latestAvg  = ep[ep.length-1].epss_avg?.toFixed(4) ?? '—';
+
+  return `The average EPSS score across all CVEs has <strong>${dir}</strong> since May 2021, currently sitting at <strong>${latestAvg}</strong>. ` +
+    `<strong>${latestHR}%</strong> of all CVEs in the NVD currently carry an EPSS score of 0.10 or higher — meaning roughly one in ${Math.round(100/parseFloat(latestHR))} known vulnerabilities is considered actively likely to be exploited within 30 days. ` +
+    `Because EPSS is trained on real exploitation telemetry from security vendors, it serves as one of the most direct available proxies for attacker prioritisation behaviour.`;
+}
+
+function obsGHSA(data) {
+  const gh = data.filter(d => d.github_advisory_count > 0);
+  if (!gh.length) return '';
+  const total    = gh.reduce((s,d)=>s+d.github_advisory_count,0);
+  const byYr     = {};
+  gh.forEach(d => { const y = d.month.slice(0,4); byYr[y] = (byYr[y]||0) + d.github_advisory_count; });
+  const yrs      = Object.keys(byYr).sort();
+  const firstYr  = yrs[0]; const lastYr = yrs[yrs.length-1];
+  const growth   = ((byYr[lastYr] - byYr[firstYr]) / byYr[firstYr] * 100).toFixed(0);
+  const recentMo = gh.slice(-1)[0];
+
+  return `Since GitHub launched its Security Advisory Database in September 2020, <strong>${fmt(total)} reviewed advisories</strong> have been published covering open-source supply-chain vulnerabilities. ` +
+    `Annual volume has grown <strong>${growth}%</strong> from ${firstYr} to ${lastYr}, with the most recent month (<strong>${recentMo.month}</strong>) logging ${recentMo.github_advisory_count} new advisories. ` +
+    `The rapid growth primarily reflects the expansion of GitHub's CNA programme and mandatory security disclosure requirements for npm, PyPI, and Maven packages — not necessarily a commensurate increase in underlying vulnerability density.`;
 }
 
 // ───────────────────────────────────────────────────
@@ -1402,6 +1643,7 @@ function renderComposite(data) {
   const currentYear = String(new Date().getFullYear());
   const completeIdx = years.reduce((last, yr, i) => yr !== currentYear ? i : last, 0);
   updateTriangleDot(scores[completeIdx]);
+  setObs('obs-5', obsComposite(years, scores, byYear));
 }
 
 // ───────────────────────────────────────────────────
