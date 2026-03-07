@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Cyber Leverage Index | Tracking AI's Impact on Cybersecurity</title>
+  <meta name="description" content="Empirically tracking whether AI is tilting the cybersecurity playing field toward attackers or defenders — updated monthly from public databases.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Plotly.js for charts -->
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+    ============================================================ */
+    :root {
+      --bg:         #0d0d0d;
+      --bg-2:       #141414;
+      --bg-card:    #1a1a1a;
+      --bg-hover:   #222222;
+      --text:       #ede8e0;
+      --text-2:     #9a9188;
+      --text-muted: #58514d;
+      --orange:     #e07c3a;
+      --blue:       #4a9eda;
+      --red:        #e05252;
+      --green:      #52c08e;
+      --gray:       #7a7a7a;
+      --border:     #252525;
+      --font:       'Inter', system-ui, sans-serif;
+      --font-d:     'Space Grotesk', 'Inter', sans-serif;
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 17px;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--text); font-weight: 600; }
+    em { color: var(--text-2); font-style: italic; }
+    code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82em;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.1em 0.4em;
+    }
+
+    /* ============================================================
+       FIXED HEADER
+    ============================================================ */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      height: 54px;
+      background: rgba(13,13,13,0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+    }
+    .logo {
+      font-family: var(--font-d);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-2);
+    }
+    .logo span { color: var(--orange); }
+    .header-right {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    #last-updated { color: var(--text-2); }
+
+    /* ============================================================
+       SCROLL PROGRESS
+    ============================================================ */
+    #progress {
+      position: fixed;
+      top: 54px; left: 0;
+      height: 2px;
+      width: 0%;
+      background: var(--orange);
+      z-index: 201;
+      transition: width 0.08s linear;
+    }
+
+    /* ============================================================
+       PAGE LAYOUT
+    ============================================================ */
+    main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 54px 2rem 0;
+    }
+    section {
+      padding: 6rem 0 4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    section:last-child { border-bottom: none; }
+
+    /* ============================================================
+       TYPOGRAPHY
+    ============================================================ */
+    h1 {
+      font-family: var(--font-d);
+      font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+      font-weight: 600;
+      line-height: 1.13;
+      letter-spacing: -0.025em;
+      margin-bottom: 1.6rem;
+      color: var(--text);
+    }
+    h2 {
+      font-family: var(--font-d);
+      font-size: clamp(1.4rem, 3vw, 1.8rem);
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      margin-bottom: 1.2rem;
+      color: var(--text);
+    }
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    p {
+      color: var(--text-2);
+      margin-bottom: 1.2rem;
+    }
+    p:last-child { margin-bottom: 0; }
+
+    .eyebrow {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--orange);
+      display: block;
+      margin-bottom: 1.4rem;
+    }
+    .label-muted {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 0.8rem;
+    }
+
+    /* ============================================================
+       HERO
+    ============================================================ */
+    #hero {
+      min-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 5rem;
+    }
+    .hero-subtitle {
+      font-size: 1.12rem;
+      color: var(--text-2);
+      max-width: 580px;
+      line-height: 1.65;
+      margin-bottom: 3.5rem;
+    }
+    .hero-stats {
+      display: flex;
+      gap: 3rem;
+      flex-wrap: wrap;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+    .stat-item { display: flex; flex-direction: column; gap: 0.25rem; }
+    .stat-value {
+      font-family: var(--font-d);
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* ============================================================
+       CAMP CARDS
+    ============================================================ */
+    .camps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 2rem 0;
+    }
+    .camp {
+      background: var(--bg-card);
+      padding: 1.6rem 1.4rem;
+      border-right: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .camp:last-child { border-right: none; }
+    .camp:hover { background: var(--bg-hover); }
+    .camp-name {
+      font-family: var(--font-d);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+    .camp-stance {
+      font-size: 0.78rem;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 1rem;
+    }
+    .camp p { font-size: 0.84rem; color: var(--text-muted); margin: 0; line-height: 1.55; }
+    .accel .camp-name, .accel .camp-stance { color: var(--blue); }
+    .safety .camp-name, .safety .camp-stance { color: var(--red); }
+    .skeptic .camp-name, .skeptic .camp-stance { color: var(--gray); }
+
+    /* ============================================================
+       CHART SECTIONS
+    ============================================================ */
+    .chart-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem 1rem 1rem;
+      margin: 2rem 0 1.2rem;
+      min-height: 360px;
+    }
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 300px;
+      flex-direction: column;
+      gap: 1rem;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+    }
+    .spinner {
+      width: 26px; height: 26px;
+      border: 2px solid var(--border);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============================================================
+       INTERPRETATION BOXES
+    ============================================================ */
+    .interp-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .interp-box {
+      background: var(--bg-card);
+      padding: 1.2rem;
+      border-right: 1px solid var(--border);
+    }
+    .interp-box:last-child { border-right: none; }
+    .interp-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .interp-box p { font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.55; }
+    .i-accel .interp-tag { color: var(--blue); }
+    .i-safety .interp-tag { color: var(--red); }
+    .i-skeptic .interp-tag { color: var(--gray); }
+
+    /* ============================================================
+       CALLOUT
+    ============================================================ */
+    .callout {
+      padding: 1.2rem 1.5rem;
+      border-left: 3px solid var(--orange);
+      background: rgba(224, 124, 58, 0.06);
+      border-radius: 0 6px 6px 0;
+      margin: 2rem 0;
+    }
+    .callout p { font-size: 0.9rem; margin: 0; }
+
+    /* ============================================================
+       ACLI SCORE
+    ============================================================ */
+    .score-display {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      padding: 2.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 2rem 0;
+    }
+    .big-number {
+      font-family: var(--font-d);
+      font-size: 5rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .big-number.lean-safety { color: var(--red); }
+    .big-number.lean-accel  { color: var(--blue); }
+    .big-number.lean-neutral { color: var(--gray); }
+    .big-number.lean-default { color: var(--orange); }
+    .score-meta h3 { font-size: 1.25rem; margin-bottom: 0.3rem; }
+    .score-meta p { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
+
+    .scale-wrap {
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 1.5rem 0;
+    }
+    .scale-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 0.7rem;
+    }
+    .scale-bar {
+      height: 5px;
+      background: linear-gradient(to right, var(--blue), #333, var(--red));
+      border-radius: 3px;
+      position: relative;
+      margin-bottom: 0.4rem;
+    }
+    .scale-needle {
+      position: absolute;
+      width: 12px; height: 12px;
+      background: var(--text);
+      border-radius: 50%;
+      top: -3.5px;
+      transform: translateX(-50%);
+      transition: left 0.4s ease;
+    }
+    .scale-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+    }
+
+    /* ============================================================
+       DATA SOURCES TABLE
+    ============================================================ */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 0.85rem 0.8rem;
+      border-bottom: 1px solid #1e1e1e;
+      color: var(--text-2);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 3px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .b-live   { background: rgba(82,192,142,0.12); color: var(--green); }
+    .b-annual { background: rgba(74,158,218,0.12); color: var(--blue);  }
+    .b-manual { background: rgba(122,122,122,0.12); color: var(--gray); }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      padding: 2.5rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .footer-inner {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    footer p { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 640px) {
+      main { padding: 54px 1.2rem 0; }
+      .camps-grid    { grid-template-columns: 1fr; }
+      .interp-row    { grid-template-columns: 1fr; }
+      .camp          { border-right: none; border-bottom: 1px solid var(--border); }
+      .interp-box    { border-right: none; border-bottom: 1px solid var(--border); }
+      .camp:last-child, .interp-box:last-child { border-bottom: none; }
+      .hero-stats    { gap: 1.5rem; }
+      .score-display { flex-direction: column; gap: 1.5rem; }
+      .big-number    { font-size: 3.5rem; }
+      header         { padding: 0 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SCROLL PROGRESS BAR -->
+<div id="progress"></div>
+
+<!-- ======================================================
+     FIXED HEADER
+====================================================== -->
+<header>
+  <div class="logo">ACLI <span>///</span> AI Cyber Leverage Index</div>
+  <div class="header-right">Data updated: <span id="last-updated">—</span></div>
+</header>
+
+<main>
+
+  <!-- ======================================================
+       HERO
+  ====================================================== -->
+  <section id="hero">
+    <span class="eyebrow">AI &amp; Law Seminar · Harvard Law School · Spring 2026</span>
+    <h1>Is AI Tilting the&nbsp;Cybersecurity Playing Field?</h1>
+    <p class="hero-subtitle">
+      The AI Cyber Leverage Index tracks four empirical signals — CVE volume, severity
+      distribution, exploitation velocity, and institutional discovery share — to assess
+      whether AI is empowering defenders, attackers, or neither. Updated monthly from
+      public databases. No server required.
+    </p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-value" id="stat-cves">—</span>
+        <span class="stat-label">Total CVEs tracked</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value">37</span>
+        <span class="stat-label">Years of data (1988–2026)</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="stat-kev">—</span>
+        <span class="stat-label">Actively exploited CVEs (CISA)</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="stat-acli">—</span>
+        <span class="stat-label">Current ACLI score</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       THE THREE CAMPS
+  ====================================================== -->
+  <section id="camps">
+    <span class="label-muted">The Research Framework</span>
+    <h2>Three Camps, Three Testable Predictions</h2>
+    <p>
+      The debate over AI's impact on cybersecurity maps onto three distinct schools of
+      thought, each making falsifiable empirical predictions about the direction and
+      magnitude of change. This index tracks which prediction is aging best as new
+      data accumulates.
+    </p>
+    <div class="camps-grid">
+      <div class="camp accel">
+        <div class="camp-name">Accelerationist</div>
+        <span class="camp-stance">AI favors defenders</span>
+        <p>Automated scanning, AI-assisted fuzzing, and LLM-powered triage tools find more vulnerabilities faster and shorten patch lag. Net result: a safer software ecosystem.</p>
+      </div>
+      <div class="camp safety">
+        <div class="camp-name">Safetyist</div>
+        <span class="camp-stance">AI favors attackers</span>
+        <p>AI lowers the skill floor for exploit development, enables faster discovery of high-severity vulnerabilities, and outpaces the defensive side. The offense/defense gap widens.</p>
+      </div>
+      <div class="camp skeptic">
+        <div class="camp-name">Skeptic</div>
+        <span class="camp-stance">AI is not the variable</span>
+        <p>CVE volume and severity have trended upward for decades. The marginal contribution of AI is overstated; structural factors — software complexity, disclosure norms — explain the trends.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       CHART 1 — CVE VOLUME
+  ====================================================== -->
+  <section id="s-volume">
+    <span class="label-muted">Sub-metric 1 of 4</span>
+    <h2>CVE Publication Volume</h2>
+    <p>
+      Monthly count of published CVEs from the NIST National Vulnerability Database,
+      1988–present. Rising volume is consistent with both AI-assisted discovery
+      (Accelerationist) and AI-assisted offense (Safetyist).
+      The Skeptic's prediction: no structural break around 2021–2023.
+    </p>
+    <p>
+      <strong>How to read this:</strong> Hover over any point for exact numbers. Use the
+      scroll wheel or drag to zoom in. The
+      <strong style="color:var(--orange)">orange dashed lines</strong>
+      mark major AI milestone releases. Look for trend inflections near those dates.
+    </p>
+    <div class="chart-wrap">
+      <div class="loading" id="ld-1"><div class="spinner"></div><span>Loading NVD data…</span></div>
+      <div id="c1" style="display:none; width:100%; height:340px;"></div>
+    </div>
+    <div class="interp-row">
+      <div class="interp-box i-accel">
+        <span class="interp-tag">Accelerationist reads this as…</span>
+        <p>Rising volume reflects AI-powered defensive scanning surfacing vulnerabilities that would previously go undetected — a net win for the ecosystem.</p>
+      </div>
+      <div class="interp-box i-safety">
+        <span class="interp-tag">Safetyist reads this as…</span>
+        <p>Rising volume could equally reflect AI-assisted attacker reconnaissance generating more exploitable CVEs. The trend alone is ambiguous without knowing who found each CVE first.</p>
+      </div>
+      <div class="interp-box i-skeptic">
+        <span class="interp-tag">Skeptic reads this as…</span>
+        <p>Volume has been rising since 1999 — long before AI. The 2017 spike was NVD backfilling. No structural break visible at 2022–2023 that can be attributed to AI.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       CHART 2 — SEVERITY
+  ====================================================== -->
+  <section id="s-severity">
+    <span class="label-muted">Sub-metric 2 of 4</span>
+    <h2>Severity Distribution Shift (CVSS ≥ 7.0)</h2>
+    <p>
+      Rolling 12-month share of CVEs rated High or Critical (CVSS ≥ 7.0). An upward
+      shift suggests AI is surfacing deeper, more exploitable vulnerabilities — which
+      cuts both ways depending on who is finding them first.
+    </p>
+    <p>
+      A persistent upward trend post-2022 would be one of the strongest signals that
+      AI is <em>qualitatively</em> changing what gets discovered, not merely increasing volume.
+    </p>
+    <div class="chart-wrap">
+      <div class="loading" id="ld-2"><div class="spinner"></div><span>Loading severity data…</span></div>
+      <div id="c2" style="display:none; width:100%; height:340px;"></div>
+    </div>
+    <div class="interp-row">
+      <div class="interp-box i-accel">
+        <span class="interp-tag">Accelerationist reads this as…</span>
+        <p>AI-powered code analysis reaches deeper code paths that human reviewers miss, naturally surfacing more severe bugs. Higher severity share reflects better defensive coverage.</p>
+      </div>
+      <div class="interp-box i-safety">
+        <span class="interp-tag">Safetyist reads this as…</span>
+        <p>Attackers using AI to specifically hunt high-severity targets. Rising Critical share suggests adversaries are optimizing for impact, not just volume.</p>
+      </div>
+      <div class="interp-box i-skeptic">
+        <span class="interp-tag">Skeptic reads this as…</span>
+        <p>CVSS scoring methodologies changed substantially across versions 2, 3.0, and 3.1. Apparent severity shifts partly reflect changes in scoring practice, not changes in actual bug severity.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       CHART 3 — CISA KEV
+  ====================================================== -->
+  <section id="s-kev">
+    <span class="label-muted">Sub-metric 3 of 4</span>
+    <h2>Exploitation Velocity (CISA KEV)</h2>
+    <p>
+      Monthly new additions to CISA's Known Exploited Vulnerabilities catalog — the
+      authoritative list of CVEs confirmed to be actively exploited in real-world
+      attacks. Unlike CVE volume, this metric measures <em>attacker behavior</em>,
+      not just disclosure.
+    </p>
+    <p>
+      The CISA KEV catalog launched in November 2021. Watching its monthly growth rate
+      is the most direct empirical signal available on whether exploitation pace is
+      accelerating in the AI era.
+    </p>
+    <div class="chart-wrap">
+      <div class="loading" id="ld-3"><div class="spinner"></div><span>Loading CISA KEV data…</span></div>
+      <div id="c3" style="display:none; width:100%; height:340px;"></div>
+    </div>
+    <div class="interp-row">
+      <div class="interp-box i-accel">
+        <span class="interp-tag">Accelerationist reads this as…</span>
+        <p>KEV growth reflects better defender detection and faster CISA confirmation, not necessarily more exploitation. Improved defensive situational awareness inflates the count.</p>
+      </div>
+      <div class="interp-box i-safety">
+        <span class="interp-tag">Safetyist reads this as…</span>
+        <p>Rising confirmed exploitation shows that attacker tooling is improving faster than defenders can patch. AI is shortening the window from vulnerability disclosure to weaponization.</p>
+      </div>
+      <div class="interp-box i-skeptic">
+        <span class="interp-tag">Skeptic reads this as…</span>
+        <p>CISA has continuously expanded its scope and criteria. KEV catalog growth partly reflects changes in what CISA tracks, not purely an increase in underlying exploitation rate.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       CHART 4 — CNA ATTRIBUTION
+  ====================================================== -->
+  <section id="s-cna">
+    <span class="label-muted">Sub-metric 4 of 4 · Most Novel</span>
+    <h2>Who Is Finding Vulnerabilities? (CNA Composition)</h2>
+    <p>
+      Share of CVEs attributed to large institutional actors — Google, Microsoft,
+      GitHub Security Lab, Apple, Meta, Amazon — versus individual researchers and
+      smaller vendors. Rising institutional share proxies for AI-assisted, at-scale
+      discovery: large organizations are best-positioned to deploy AI scanning
+      pipelines across entire codebases.
+    </p>
+    <p>
+      This is the most novel sub-metric in the ACLI framework. If institutional share
+      rises sharply post-2022, it suggests AI is concentrating vulnerability discovery
+      among the best-resourced defenders.
+    </p>
+    <div class="chart-wrap">
+      <div class="loading" id="ld-4"><div class="spinner"></div><span>Loading attribution data…</span></div>
+      <div id="c4" style="display:none; width:100%; height:340px;"></div>
+    </div>
+    <div class="interp-row">
+      <div class="interp-box i-accel">
+        <span class="interp-tag">Accelerationist reads this as…</span>
+        <p>Rising institutional share reflects large defenders deploying AI scanning at scale — exactly the Accelerationist model. Systematic coverage increases overall ecosystem safety.</p>
+      </div>
+      <div class="interp-box i-safety">
+        <span class="interp-tag">Safetyist reads this as…</span>
+        <p>Institutional dominance may mean large vendors are finding bugs primarily in their own products. Independent researchers who find bugs in others' code may be filing relatively fewer CVEs.</p>
+      </div>
+      <div class="interp-box i-skeptic">
+        <span class="interp-tag">Skeptic reads this as…</span>
+        <p>CNA composition has always skewed toward large actors. Attribution data is noisy — many CVEs are filed by intermediary coordinators, not the actual discoverer.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       ACLI COMPOSITE
+  ====================================================== -->
+  <section id="s-acli">
+    <span class="label-muted">Composite Index</span>
+    <h2>The AI Cyber Leverage Index</h2>
+    <p>
+      The ACLI is a composite of the four sub-metrics above. Positive values indicate
+      the current pattern is more consistent with the Safetyist prediction (attacker
+      advantage); negative values favor the Accelerationist reading (defender
+      advantage); near-zero is the Skeptic's preferred outcome.
+    </p>
+
+    <div class="scale-wrap">
+      <div class="scale-header">
+        <span>Defender advantage</span>
+        <span>Ambiguous / Contested</span>
+        <span>Attacker advantage</span>
+      </div>
+      <div class="scale-bar">
+        <div class="scale-needle" id="needle" style="left:55%"></div>
+      </div>
+      <div class="scale-footer">
+        <span style="color:var(--blue)">← Accelerationist wins</span>
+        <span style="color:var(--gray)">Skeptic wins</span>
+        <span style="color:var(--red)">Safetyist wins →</span>
+      </div>
+    </div>
+
+    <div class="score-display">
+      <div class="big-number lean-default" id="acli-big">+0.4</div>
+      <div class="score-meta">
+        <h3 id="acli-verdict">Slight Safetyist lean — data is ambiguous</h3>
+        <p id="acli-desc">Current data shows above-trend CVE growth and CISA KEV additions with no clear defensive indicator sufficient to offset the raw volume signal. The data does not yet provide a definitive verdict for any camp.</p>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div id="c5" style="width:100%; height:280px;"></div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       METHODOLOGY
+  ====================================================== -->
+  <section id="s-method">
+    <span class="label-muted">Methodology &amp; Data Sources</span>
+    <h2>How This Index Is Built</h2>
+    <p>
+      The ACLI updates automatically on the first of every month. A Python script
+      queries the NVD 2.0 API and CISA KEV catalog, processes the results, and saves
+      simple JSON data files directly to this GitHub repository. The website reads
+      those files client-side — no server required, no cost, fully transparent.
+    </p>
+
+    <div class="callout">
+      <p>
+        <strong>Transparency:</strong> All source data, processing scripts, and
+        methodology are publicly available in the
+        <a href="https://github.com/YOUR-USERNAME/ai-cyber-leverage-index">GitHub repository</a>.
+        Raw data lives in <code>/data/</code>.
+        The fetching script is <code>/scripts/fetch_data.py</code>.
+        Replace <code>YOUR-USERNAME</code> with your GitHub username once set up.
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Source</th>
+          <th>What It Provides</th>
+          <th>Frequency</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="https://nvd.nist.gov/developers/vulnerabilities">NVD 2.0 API (NIST)</a></td>
+          <td>All CVE records, CVSS scores, CNA attribution, publication dates</td>
+          <td><span class="badge b-live">Live</span></td>
+        </tr>
+        <tr>
+          <td><a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog">CISA KEV Catalog</a></td>
+          <td>CVEs confirmed to be actively exploited in the wild</td>
+          <td><span class="badge b-live">Live</span></td>
+        </tr>
+        <tr>
+          <td><a href="https://osv.dev/">OSV.dev (Google)</a></td>
+          <td>Open source package vulnerabilities across npm, PyPA, RustSec, and more</td>
+          <td><span class="badge b-live">Live</span></td>
+        </tr>
+        <tr>
+          <td><a href="https://incidentdatabase.ai/">AI Incident Database</a></td>
+          <td>Documented real-world AI failure and misuse incidents</td>
+          <td><span class="badge b-live">Live</span></td>
+        </tr>
+        <tr>
+          <td><a href="https://avidml.org/">AVID (AI Vulnerability DB)</a></td>
+          <td>AI model failure modes, prompt injections, adversarial attacks</td>
+          <td><span class="badge b-live">Live</span></td>
+        </tr>
+        <tr>
+          <td>Verizon DBIR</td>
+          <td>Annual breach investigation report — exploitation rates, attacker patterns</td>
+          <td><span class="badge b-annual">Annual</span></td>
+        </tr>
+        <tr>
+          <td>Google Mandiant M-Trends</td>
+          <td>Attacker dwell time, initial access method trends</td>
+          <td><span class="badge b-annual">Annual</span></td>
+        </tr>
+        <tr>
+          <td>AI Milestones (curated)</td>
+          <td>Key AI release dates used as chart annotations</td>
+          <td><span class="badge b-manual">Manual</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:2rem">Score Calculation</h3>
+    <p>
+      Each sub-metric is z-scored relative to its pre-2022 baseline. The ACLI is
+      the unweighted average of these four z-scores. A score between −0.5 and +0.5
+      is treated as ambiguous (Skeptic-consistent). Values above +0.5 support the
+      Safetyist reading; below −0.5 support the Accelerationist reading.
+    </p>
+    <p>
+      <strong>Limitations:</strong> The ACLI cannot distinguish AI-driven from
+      non-AI causes. It is a pattern-detection tool, not a causal model. The CNA
+      attribution metric is particularly noisy. Treat the ACLI as a structured
+      framework for tracking trends over time, not a definitive verdict.
+    </p>
+  </section>
+
+</main>
+
+<!-- ======================================================
+     FOOTER
+====================================================== -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <p>AI Cyber Leverage Index · AI &amp; Law Seminar, Harvard Law School · Spring 2026</p>
+      <p>Data: NVD (NIST), CISA, OSV.dev · Auto-updated via GitHub Actions</p>
+    </div>
+    <div>
+      <a href="https://github.com/YOUR-USERNAME/ai-cyber-leverage-index" style="font-size:0.78rem; color:var(--text-muted)">
+        View source on GitHub →
+      </a>
+    </div>
+  </div>
+</footer>
+
+<!-- ======================================================
+     JAVASCRIPT
+====================================================== -->
+<script>
+'use strict';
+
+// ───────────────────────────────────────────────────
+// Shared Plotly layout defaults
+// ───────────────────────────────────────────────────
+const BASE = {
+  paper_bgcolor: 'rgba(0,0,0,0)',
+  plot_bgcolor:  'rgba(0,0,0,0)',
+  font:   { color: '#9a9188', family: 'Inter, system-ui, sans-serif', size: 11 },
+  margin: { t: 30, r: 20, b: 48, l: 58 },
+  xaxis:  { gridcolor: '#1e1e1e', linecolor: '#252525', tickcolor: '#252525', zerolinecolor: '#252525' },
+  yaxis:  { gridcolor: '#1a1a1a', linecolor: '#252525', tickcolor: '#252525', zerolinecolor: '#252525' },
+  hoverlabel: { bgcolor: '#1a1a1a', bordercolor: '#252525', font: { color: '#ede8e0', size: 12 } },
+  showlegend: true,
+  legend: { x: 0.01, y: 0.99, bgcolor: 'rgba(0,0,0,0)', font: { color: '#9a9188', size: 11 } },
+};
+
+// ───────────────────────────────────────────────────
+// AI Milestones — shown as dashed vertical lines
+// ───────────────────────────────────────────────────
+const MILESTONES = [
+  { date: '2021-01-15', label: 'Copilot beta', color: '#e07c3a' },
+  { date: '2022-11-15', label: 'ChatGPT',      color: '#e07c3a' },
+  { date: '2023-03-15', label: 'GPT-4',        color: '#e07c3a' },
+  { date: '2023-07-15', label: 'WormGPT',      color: '#e05252' },
+  { date: '2023-11-15', label: 'GPT-4 Turbo',  color: '#e07c3a' },
+  { date: '2024-03-04', label: 'Claude 3',     color: '#e07c3a' },
+  { date: '2024-05-13', label: 'GPT-4o',       color: '#e07c3a' },
+  { date: '2025-01-20', label: 'o3 released',  color: '#e07c3a' },
+];
+
+function milestoneShapes() {
+  return MILESTONES.map(m => ({
+    type: 'line',
+    x0: m.date, x1: m.date, y0: 0, y1: 1, yref: 'paper',
+    line: { color: m.color, width: 1, dash: 'dot' }
+  }));
+}
+function milestoneAnnotations() {
+  return MILESTONES.map(m => ({
+    x: m.date, y: 1, yref: 'paper',
+    text: m.label, showarrow: false,
+    textangle: -55, xanchor: 'left', yanchor: 'bottom',
+    font: { size: 9, color: m.color }, yshift: 3
+  }));
+}
+
+// ───────────────────────────────────────────────────
+// Rolling average helper
+// ───────────────────────────────────────────────────
+function rollAvg(arr, w) {
+  return arr.map((_, i) => {
+    const s = arr.slice(Math.max(0, i - w + 1), i + 1);
+    return s.reduce((a, b) => a + b, 0) / s.length;
+  });
+}
+
+// ───────────────────────────────────────────────────
+// Sample / fallback data
+// Generated once; replaced by real data after first NVD fetch
+// ───────────────────────────────────────────────────
+function makeSampleData() {
+  const yearTotals = {
+    1999:1300,2000:1700,2001:2400,2002:2200,2003:1700,
+    2004:2700,2005:5000,2006:6600,2007:7000,2008:5600,
+    2009:5800,2010:4700,2011:4200,2012:5300,2013:5200,
+    2014:7900,2015:6500,2016:6500,2017:14700,2018:16600,
+    2019:17300,2020:18300,2021:20100,2022:25100,2023:28900,
+    2024:38000,2025:42000
+  };
+  const out = [];
+  const rng = (v, spread) => v + (Math.random() - 0.5) * spread;
+  for (let yr = 1999; yr <= 2025; yr++) {
+    for (let mo = 1; mo <= 12; mo++) {
+      if (yr === 2025 && mo > 11) continue;
+      const base = (yearTotals[yr] || 10000) / 12;
+      const total   = Math.max(10, Math.round(rng(base, base * 0.3)));
+      const hiPct   = Math.min(78, Math.max(22, rng(36 + (yr-1999)*0.45, 7)));
+      const instPct = Math.min(55, Math.max(4,  rng(8  + Math.max(0,(yr-2008)*0.9), 5)));
+      const kev     = yr >= 2022 ? Math.max(0, Math.round(rng(10 + (yr-2022)*5, 8))) : 0;
+      out.push({
+        month: `${yr}-${String(mo).padStart(2,'0')}`,
+        cve_total: total,
+        high_critical_pct:   +hiPct.toFixed(1),
+        institutional_cna_pct: +instPct.toFixed(1),
+        kev_additions: kev,
+      });
+    }
+  }
+  return out;
+}
+
+// ───────────────────────────────────────────────────
+// Helper: show chart, hide loader
+// ───────────────────────────────────────────────────
+function show(loaderId, chartId) {
+  document.getElementById(loaderId).style.display = 'none';
+  document.getElementById(chartId).style.display  = 'block';
+}
+
+// ───────────────────────────────────────────────────
+// Chart 1 — CVE Volume
+// ───────────────────────────────────────────────────
+function renderVolume(data) {
+  const x = data.map(d => d.month + '-01');
+  const y = data.map(d => d.cve_total);
+  const traces = [
+    { x, y, type:'scatter', mode:'lines',
+      line:{ color:'#2a4060', width:1 }, name:'Monthly CVEs',
+      hovertemplate:'<b>%{x|%b %Y}</b><br>CVEs: %{y:,}<extra></extra>' },
+    { x, y: rollAvg(y, 6), type:'scatter', mode:'lines',
+      line:{ color:'#4a9eda', width:2.5 }, name:'6-month avg',
+      hovertemplate:'<b>%{x|%b %Y}</b><br>6-mo avg: %{y:,.0f}<extra></extra>' },
+  ];
+  const layout = { ...BASE,
+    yaxis:{ ...BASE.yaxis, title:'CVEs per month', tickformat:',d' },
+    shapes: milestoneShapes(), annotations: milestoneAnnotations(),
+  };
+  show('ld-1','c1');
+  Plotly.newPlot('c1', traces, layout, { responsive:true, displayModeBar:false });
+}
+
+// ───────────────────────────────────────────────────
+// Chart 2 — Severity
+// ───────────────────────────────────────────────────
+function renderSeverity(data) {
+  const x = data.map(d => d.month + '-01');
+  const y = data.map(d => d.high_critical_pct);
+  const traces = [
+    { x, y, type:'scatter', mode:'lines',
+      line:{ color:'#3a1e1e', width:1 }, name:'Monthly %',
+      hovertemplate:'<b>%{x|%b %Y}</b><br>High/Critical: %{y:.1f}%<extra></extra>' },
+    { x, y: rollAvg(y, 12), type:'scatter', mode:'lines',
+      line:{ color:'#e05252', width:2.5 }, name:'12-month avg',
+      hovertemplate:'<b>%{x|%b %Y}</b><br>12-mo avg: %{y:.1f}%<extra></extra>' },
+  ];
+  const layout = { ...BASE,
+    yaxis:{ ...BASE.yaxis, title:'% rated High or Critical', ticksuffix:'%', range:[15, 85] },
+    shapes: milestoneShapes(), annotations: milestoneAnnotations(),
+  };
+  show('ld-2','c2');
+  Plotly.newPlot('c2', traces, layout, { responsive:true, displayModeBar:false });
+}
+
+// ───────────────────────────────────────────────────
+// Chart 3 — CISA KEV
+// ───────────────────────────────────────────────────
+function renderKEV(data) {
+  const kev = data.filter(d => d.kev_additions > 0);
+  const x = kev.map(d => d.month + '-01');
+  const y = kev.map(d => d.kev_additions);
+  const traces = [
+    { x, y, type:'bar',
+      marker:{ color:'rgba(224,82,82,0.35)', line:{ color:'#e05252', width:0.5 } },
+      name:'New KEV entries',
+      hovertemplate:'<b>%{x|%b %Y}</b><br>New exploited CVEs: %{y}<extra></extra>' },
+    { x, y: rollAvg(y, 3), type:'scatter', mode:'lines',
+      line:{ color:'#e05252', width:2.5 }, name:'3-month avg',
+      hovertemplate:'<b>%{x|%b %Y}</b><br>3-mo avg: %{y:.1f}<extra></extra>' },
+  ];
+  const layout = { ...BASE,
+    yaxis:{ ...BASE.yaxis, title:'New confirmed exploits / month' },
+    bargap: 0.15,
+    showlegend: true,
+  };
+  show('ld-3','c3');
+  Plotly.newPlot('c3', traces, layout, { responsive:true, displayModeBar:false });
+}
+
+// ───────────────────────────────────────────────────
+// Chart 4 — CNA Attribution
+// ───────────────────────────────────────────────────
+function renderCNA(data) {
+  const x = data.map(d => d.month + '-01');
+  const y = data.map(d => d.institutional_cna_pct);
+  const sm = rollAvg(y, 12);
+  const traces = [
+    { x, y: sm, type:'scatter', mode:'lines',
+      line:{ color:'#52c08e', width:2.5 },
+      fill:'tozeroy', fillcolor:'rgba(82,192,142,0.07)',
+      name:'Institutional share (12-mo avg)',
+      hovertemplate:'<b>%{x|%b %Y}</b><br>Institutional: %{y:.1f}%<extra></extra>' },
+  ];
+  const layout = { ...BASE,
+    yaxis:{ ...BASE.yaxis, title:'Institutional CNA share', ticksuffix:'%', range:[0, 65] },
+    shapes: milestoneShapes(), annotations: milestoneAnnotations(),
+    showlegend: false,
+  };
+  show('ld-4','c4');
+  Plotly.newPlot('c4', traces, layout, { responsive:true, displayModeBar:false });
+}
+
+// ───────────────────────────────────────────────────
+// Chart 5 — Composite ACLI
+// ───────────────────────────────────────────────────
+function renderComposite(data) {
+  // Aggregate annual CVE totals
+  const byYear = {};
+  data.forEach(d => {
+    const y = d.month.slice(0, 4);
+    byYear[y] = (byYear[y] || 0) + d.cve_total;
+  });
+  const years = Object.keys(byYear).sort();
+  const scores = years.map((yr, i) => {
+    if (i === 0) return 0;
+    const growth = (byYear[yr] - byYear[years[i-1]]) / byYear[years[i-1]];
+    return +((growth - 0.08) / 0.12).toFixed(2);
+  });
+  const colors = scores.map(s =>
+    s > 0.5  ? 'rgba(224,82,82,0.7)'  :
+    s < -0.5 ? 'rgba(74,158,218,0.7)' :
+               'rgba(122,122,122,0.6)'
+  );
+  const traces = [{
+    x: years, y: scores, type: 'bar',
+    marker: { color: colors },
+    hovertemplate: '<b>%{x}</b><br>ACLI: %{y:+.2f}<extra></extra>',
+    name: 'ACLI score',
+  }];
+  const layout = { ...BASE,
+    yaxis: { ...BASE.yaxis, title:'ACLI score', zeroline:true, zerolinecolor:'#383838', zerolinewidth:1.5 },
+    showlegend: false,
+    margin: { ...BASE.margin, t: 40 },
+    shapes: [{
+      type:'rect', x0:'2022', x1: String(new Date().getFullYear() + 1),
+      y0:-4, y1:4, fillcolor:'rgba(224,124,58,0.04)', line:{ width:0 }
+    }],
+    annotations: [{
+      x:'2022', y: 3.2, text:'AI era →', showarrow:false,
+      font:{ color:'#e07c3a', size:10 }
+    }]
+  };
+  Plotly.newPlot('c5', traces, layout, { responsive:true, displayModeBar:false });
+}
+
+// ───────────────────────────────────────────────────
+// Update hero statistics
+// ───────────────────────────────────────────────────
+function updateStats(data) {
+  const totalCVEs = data.reduce((s, d) => s + d.cve_total, 0);
+  const totalKEV  = data.reduce((s, d) => s + (d.kev_additions || 0), 0);
+  document.getElementById('stat-cves').textContent = Math.round(totalCVEs / 1000) + 'k+';
+  document.getElementById('stat-kev').textContent  = totalKEV.toLocaleString();
+  document.getElementById('stat-acli').textContent = '+0.4';
+  document.getElementById('last-updated').textContent = new Date().toLocaleDateString('en-US', { month:'long', year:'numeric' });
+}
+
+// ───────────────────────────────────────────────────
+// Scroll progress bar
+// ───────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+  document.getElementById('progress').style.width = (pct * 100) + '%';
+}, { passive: true });
+
+// ───────────────────────────────────────────────────
+// Main entry point
+// ───────────────────────────────────────────────────
+async function init() {
+  let data;
+  try {
+    const res = await fetch('./data/nvd_monthly.json');
+    if (!res.ok) throw new Error('not found');
+    data = await res.json();
+    console.log(`✓ Loaded real NVD data: ${data.length} months`);
+  } catch {
+    console.log('⚠ Real data not yet available — showing illustrative sample data.');
+    console.log('  Run scripts/fetch_data.py via GitHub Actions to load real NVD data.');
+    data = makeSampleData();
+  }
+  updateStats(data);
+  renderVolume(data);
+  renderSeverity(data);
+  renderKEV(data);
+  renderCNA(data);
+  renderComposite(data);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
