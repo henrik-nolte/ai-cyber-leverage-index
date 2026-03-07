@@ -6,8 +6,9 @@
 #
 # What it does:
 #   1. Sets up Python
-#   2. Installs the "requests" library
-#   3. Runs fetch_data.py (queries NVD API + CISA KEV)
+#   2. Installs the "requests" library (only external dependency)
+#   3. Runs fetch_data.py, which pulls from five free sources:
+#        NVD 2.0 API · CISA KEV · EPSS (Cyentia) · Exploit-DB · GitHub Advisories
 #   4. Saves updated data/nvd_monthly.json back to the repository
 #   5. Commits and pushes the changes
 #
@@ -48,10 +49,12 @@ jobs:
         run: pip install requests
 
       # Step 4: Run the data fetcher
-      # The NVD_API_KEY secret is set in your repo's Settings → Secrets
-      - name: Fetch NVD and CISA KEV data
+      # NVD_API_KEY secret: Settings → Secrets → Actions → NVD_API_KEY (required for speed)
+      # GITHUB_TOKEN is automatically provided by Actions (raises GitHub Advisory rate limit)
+      - name: Fetch all data sources
         env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          NVD_API_KEY:   ${{ secrets.NVD_API_KEY }}
+          GITHUB_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/fetch_data.py
 
       # Step 5: Commit and push the updated data file
@@ -62,6 +65,11 @@ jobs:
           git add data/
           # Only commit if there are actual changes
           if git diff --staged --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "chore: monthly data update $(date +%Y-%m)"
+            git push
+          fi
             echo "No data changes to commit."
           else
             git commit -m "chore: monthly data update $(date +%Y-%m)"
