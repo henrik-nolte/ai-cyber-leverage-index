@@ -182,11 +182,10 @@
        HERO
     ============================================================ */
     #hero {
-      min-height: 90vh;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding-top: 5rem;
+      justify-content: flex-start;
+      padding-top: 6rem;
       padding-bottom: 0;
       border-bottom: none;   /* border is on .hero-stats instead */
     }
@@ -477,7 +476,7 @@
     <span class="eyebrow">AI &amp; Law Seminar · Harvard Law School</span>
     <h1>Is AI Tilting the&nbsp;Cybersecurity Playing Field?</h1>
     <p class="hero-subtitle">
-      The <abbr title="AI Cyber Leverage Index">ACLI</abbr> tracks four empirical signals —
+      The AI Cyber Leverage Index (<strong>ACLI</strong>) tracks four empirical signals —
       CVE volume, severity distribution, exploitation velocity, and institutional discovery share —
       to assess whether AI is empowering defenders, attackers, or neither.
       Updated monthly from public vulnerability databases.
@@ -1549,19 +1548,19 @@ document.addEventListener('DOMContentLoaded', init);
   const canvas = document.getElementById('bg-canvas');
   const ctx    = canvas.getContext('2d');
 
-  const PARTICLE_COUNT  = 75;   // number of nodes
-  const CONNECT_DIST    = 160;  // max distance for connection lines
-  const MOUSE_RADIUS    = 200;  // mouse influence radius
+  const PARTICLE_COUNT  = 80;   // number of nodes
+  const CONNECT_DIST    = 170;  // max distance for connection lines
+  const MOUSE_RADIUS    = 220;  // mouse influence radius
   const SPEED           = 0.28; // base particle speed
-  const DOT_RADIUS      = 1.4;
-  const LINE_OPACITY    = 0.13; // base opacity for connection lines
-  const DOT_OPACITY     = 0.35;
+  const DOT_RADIUS      = 1.8;
+  const LINE_OPACITY    = 0.35; // base opacity for connection lines
+  const DOT_OPACITY     = 0.7;
 
   let W, H, dpr;
   let mouse = { x: -9999, y: -9999 };
 
-  // Particle colors — muted tones that complement the dark palette
-  const COLORS = ['#3a4a5e', '#2d5247', '#4a3d2e', '#2e3d4a', '#3d3343'];
+  // Particle colors — visible but still subtle against dark background
+  const COLORS = ['#4a6880', '#3d7a68', '#6b5a3a', '#3d5c7a', '#5a4d6b'];
 
   function resize() {
     dpr    = window.devicePixelRatio || 1;
@@ -1597,13 +1596,6 @@ document.addEventListener('DOMContentLoaded', init);
 
   function tick() {
     ctx.clearRect(0, 0, W, H);
-
-    // Subtle radial vignette — darker at corners, very slightly lighter at center
-    const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.hypot(W, H) / 2);
-    grad.addColorStop(0,   'rgba(14,14,20, 0.0)');
-    grad.addColorStop(1,   'rgba(6, 6, 10, 0.55)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
 
     // Update positions, bounce off edges
     particles.forEach(p => {
@@ -1645,7 +1637,7 @@ document.addEventListener('DOMContentLoaded', init);
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = `rgba(90,110,140,${alpha.toFixed(3)})`;
+          ctx.strokeStyle = `rgba(100,130,170,${alpha.toFixed(3)})`;
           ctx.lineWidth = 0.7;
           ctx.stroke();
         }
