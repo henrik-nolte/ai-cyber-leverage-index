@@ -1179,7 +1179,7 @@ function makeSampleData() {
     2020:300, 2021:1800, 2022:3200, 2023:4000, 2024:4600, 2025:5000
   };
   const out = [];
-  const rand = makeSeededRng(0xACL1_2026);   // fixed seed → same data every load
+  const rand = makeSeededRng(20261337);      // fixed seed → same data every load
   const rng  = (v, spread) => v + (rand() - 0.5) * spread;
   for (let yr = 1988; yr <= 2025; yr++) {
     for (let mo = 1; mo <= 12; mo++) {
