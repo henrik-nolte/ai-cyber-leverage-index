@@ -242,9 +242,9 @@
       margin-bottom: 1rem;
     }
     .camp p { font-size: 0.84rem; color: var(--text-muted); margin: 0; line-height: 1.55; }
-    .accel .camp-name, .accel .camp-stance { color: var(--blue); }
+    .accel .camp-name, .accel .camp-stance { color: var(--green); }
     .safety .camp-name, .safety .camp-stance { color: var(--red); }
-    .skeptic .camp-name, .skeptic .camp-stance { color: var(--gray); }
+    .skeptic .camp-name, .skeptic .camp-stance { color: var(--orange); }
 
     /* ============================================================
        CHART SECTIONS
@@ -302,9 +302,9 @@
       margin-bottom: 0.5rem;
     }
     .interp-box p { font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.55; }
-    .i-accel .interp-tag { color: var(--blue); }
+    .i-accel .interp-tag { color: var(--green); }
     .i-safety .interp-tag { color: var(--red); }
-    .i-skeptic .interp-tag { color: var(--gray); }
+    .i-skeptic .interp-tag { color: var(--orange); }
 
     /* ============================================================
        CALLOUT
@@ -704,7 +704,7 @@
         <div class="scale-needle" id="needle" style="left:55%"></div>
       </div>
       <div class="scale-footer">
-        <span style="color:var(--blue)">← Accelerationist wins</span>
+        <span style="color:var(--green)">← Accelerationist wins</span>
         <span style="color:var(--gray)">Skeptic wins</span>
         <span style="color:var(--red)">Safetyist wins →</span>
       </div>
@@ -846,7 +846,7 @@ const BASE = {
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor:  'rgba(0,0,0,0)',
   font:   { color: '#9a9188', family: 'Inter, system-ui, sans-serif', size: 11 },
-  margin: { t: 30, r: 20, b: 48, l: 58 },
+  margin: { t: 90, r: 20, b: 48, l: 58 },
   xaxis:  { gridcolor: '#1e1e1e', linecolor: '#252525', tickcolor: '#252525', zerolinecolor: '#252525' },
   yaxis:  { gridcolor: '#1a1a1a', linecolor: '#252525', tickcolor: '#252525', zerolinecolor: '#252525' },
   hoverlabel: { bgcolor: '#1a1a1a', bordercolor: '#252525', font: { color: '#ede8e0', size: 12 } },
@@ -1046,9 +1046,9 @@ function renderComposite(data) {
     return +((growth - 0.08) / 0.12).toFixed(2);
   });
   const colors = scores.map(s =>
-    s > 0.5  ? 'rgba(224,82,82,0.7)'  :
-    s < -0.5 ? 'rgba(74,158,218,0.7)' :
-               'rgba(122,122,122,0.6)'
+    s > 0.5  ? 'rgba(224,82,82,0.7)'   :   // Safetyist lean → red
+    s < -0.5 ? 'rgba(82,192,142,0.7)'  :   // Accelerationist lean → green
+               'rgba(224,124,58,0.65)'      // Ambiguous / Skeptic → orange
   );
   const traces = [{
     x: years, y: scores, type: 'bar',
@@ -1101,6 +1101,7 @@ async function init() {
     const res = await fetch('./data/nvd_monthly.json');
     if (!res.ok) throw new Error('not found');
     data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) throw new Error('empty — run fetch_data.py first');
     console.log(`✓ Loaded real NVD data: ${data.length} months`);
   } catch {
     console.log('⚠ Real data not yet available — showing illustrative sample data.');
