@@ -60,6 +60,10 @@
       border-radius: 3px;
       padding: 0.1em 0.4em;
     }
+    abbr[title] {
+      text-decoration: underline dotted var(--text-muted);
+      cursor: help;
+    }
 
     /* ============================================================
        FIXED HEADER
@@ -68,6 +72,7 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 200;
+      isolation: isolate;
       height: 54px;
       background: rgba(13,13,13,0.94);
       backdrop-filter: blur(16px);
@@ -113,6 +118,8 @@
       max-width: 780px;
       margin: 0 auto;
       padding: 54px 2rem 0;
+      position: relative;
+      z-index: 1;
     }
     section {
       padding: 6rem 0 4rem;
@@ -180,6 +187,8 @@
       flex-direction: column;
       justify-content: center;
       padding-top: 5rem;
+      padding-bottom: 0;
+      border-bottom: none;   /* border is on .hero-stats instead */
     }
     .hero-subtitle {
       font-size: 1.12rem;
@@ -192,8 +201,9 @@
       display: flex;
       gap: 3rem;
       flex-wrap: wrap;
-      padding-top: 2rem;
+      padding: 1.6rem 0;
       border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
     }
     .stat-item { display: flex; flex-direction: column; gap: 0.25rem; }
     .stat-value {
@@ -404,6 +414,8 @@
     footer {
       padding: 2.5rem 0;
       border-top: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
     }
     .footer-inner {
       max-width: 780px;
@@ -436,8 +448,17 @@
 </head>
 <body>
 
+<!-- INTERACTIVE BACKGROUND CANVAS -->
+<canvas id="bg-canvas" style="
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+"></canvas>
+
 <!-- SCROLL PROGRESS BAR -->
-<div id="progress"></div>
+<div id="progress" style="z-index: 202; position: relative;"></div>
 
 <!-- ======================================================
      FIXED HEADER
@@ -453,13 +474,13 @@
        HERO
   ====================================================== -->
   <section id="hero">
-    <span class="eyebrow">AI &amp; Law Seminar · Harvard Law School · Spring 2026</span>
+    <span class="eyebrow">AI &amp; Law Seminar · Harvard Law School</span>
     <h1>Is AI Tilting the&nbsp;Cybersecurity Playing Field?</h1>
     <p class="hero-subtitle">
-      The AI Cyber Leverage Index tracks four empirical signals — CVE volume, severity
-      distribution, exploitation velocity, and institutional discovery share — to assess
-      whether AI is empowering defenders, attackers, or neither. Updated monthly from
-      public databases. No server required.
+      The <abbr title="AI Cyber Leverage Index">ACLI</abbr> tracks four empirical signals —
+      CVE volume, severity distribution, exploitation velocity, and institutional discovery share —
+      to assess whether AI is empowering defenders, attackers, or neither.
+      Updated monthly from public vulnerability databases.
     </p>
     <div class="hero-stats">
       <div class="stat-item">
@@ -467,8 +488,8 @@
         <span class="stat-label">Total CVEs tracked</span>
       </div>
       <div class="stat-item">
-        <span class="stat-value">37</span>
-        <span class="stat-label">Years of data (1988–2026)</span>
+        <span class="stat-value" id="stat-years">—</span>
+        <span class="stat-label" id="stat-years-label">Years of data</span>
       </div>
       <div class="stat-item">
         <span class="stat-value" id="stat-kev">—</span>
@@ -790,6 +811,122 @@
   </section>
 
   <!-- ======================================================
+       SUPPLEMENTARY SIGNALS
+  ====================================================== -->
+  <section id="s-supp">
+    <span class="label-muted">Supplementary Signals</span>
+    <h2>Additional Data Streams</h2>
+    <p>
+      Three independent datasets provide cross-validation and additional context beyond the four core
+      sub-metrics. These signals are not included in the composite ACLI score (they cover shorter
+      time horizons), but they offer converging or diverging evidence worth tracking.
+    </p>
+
+    <!-- ─── Exploit-DB ─────────────────────────────────────── -->
+    <h3 style="margin-top:2.5rem; color:var(--green);">Exploit-DB: Public Exploit Publications</h3>
+    <p class="interp-intro">
+      <strong>How to read this:</strong> Each point is the number of new working exploits published publicly
+      that month (left axis). The dashed line is the share of those exploits that cite a specific CVE (right axis).
+      Rising volume means more offensive tools are freely available to any attacker.
+      A rising CVE-linkage rate means exploits are increasingly tied to known, trackable vulnerabilities —
+      a double-edged signal that helps defenders patch faster but also makes targeting trivial.
+    </p>
+    <div class="chart-wrap" style="margin-top:1rem;">
+      <div id="ld-s1" class="chart-loader">Loading Exploit-DB data…</div>
+      <div id="cs1" style="width:100%; height:320px; display:none;"></div>
+    </div>
+    <div class="interp-row" style="margin-top:1rem;">
+      <div class="interp-box i-accel">
+        <span class="interp-tag">Accelerationist reads this as…</span>
+        <p>Rising CVE-linked exploit publication is actually a defender signal — tools like Metasploit and
+        PoC code give red teams and patch teams the same information. Knowing which CVEs are exploitable
+        drives faster institutional patching, not just more attacks.</p>
+      </div>
+      <div class="interp-box i-safety">
+        <span class="interp-tag">Safetyist reads this as…</span>
+        <p>More public exploits lowers the skill floor for attackers dramatically. A working exploit that
+        used to require a nation-state actor can now be run by a script kiddie within days of publication.
+        AI-assisted code generation is accelerating this trend further.</p>
+      </div>
+      <div class="interp-box i-skeptic">
+        <span class="interp-tag">Skeptic reads this as…</span>
+        <p>Exploit-DB volume has been roughly flat for years — there is no obvious structural break
+        attributable to AI. The CVE-linkage trend reflects better disclosure hygiene, not a change
+        in the underlying attacker/defender balance.</p>
+      </div>
+    </div>
+
+    <!-- ─── EPSS ────────────────────────────────────────────── -->
+    <h3 style="margin-top:3rem; color:var(--blue);">EPSS: Exploitation Probability Over Time</h3>
+    <p class="interp-intro">
+      <strong>How to read this:</strong> EPSS (Exploit Prediction Scoring System) assigns each CVE a
+      probability that it will be observed being exploited in the wild within the next 30 days.
+      The solid line shows the monthly average EPSS score across all CVEs (left axis).
+      The dashed line shows the percentage of CVEs scoring ≥ 0.10 — a meaningful risk threshold (right axis).
+      EPSS data is available from May 2021 onwards.
+    </p>
+    <div class="chart-wrap" style="margin-top:1rem;">
+      <div id="ld-s2" class="chart-loader">Loading EPSS data…</div>
+      <div id="cs2" style="width:100%; height:320px; display:none;"></div>
+    </div>
+    <div class="interp-row" style="margin-top:1rem;">
+      <div class="interp-box i-accel">
+        <span class="interp-tag">Accelerationist reads this as…</span>
+        <p>If average EPSS is rising, it means a growing share of CVEs are being actively exploited —
+        defenders are finding and fixing vulnerabilities faster than attackers can exploit them.
+        Better detection infrastructure is translating into real-world exploitation prevention.</p>
+      </div>
+      <div class="interp-box i-safety">
+        <span class="interp-tag">Safetyist reads this as…</span>
+        <p>An upward trend in high-risk EPSS scores means the attack surface is expanding faster
+        than defenders can respond. AI-generated vulnerability research and automated exploit frameworks
+        are converting theoretical CVEs into active threats at unprecedented speed.</p>
+      </div>
+      <div class="interp-box i-skeptic">
+        <span class="interp-tag">Skeptic reads this as…</span>
+        <p>EPSS scores reflect attacker behavior that has been evolving for decades independent of AI.
+        The model is trained on exploitation signals from security vendors — it may reflect
+        improved detection and reporting more than a true change in attacker capability.</p>
+      </div>
+    </div>
+
+    <!-- ─── GitHub Advisories ───────────────────────────────── -->
+    <h3 style="margin-top:3rem; color:var(--blue);">GitHub Security Advisories (GHSA)</h3>
+    <p class="interp-intro">
+      <strong>How to read this:</strong> GitHub's Security Advisory database tracks vulnerabilities in
+      open-source software supply chains — the libraries and packages that underpin most modern software.
+      Each bar is the number of new advisories published in that month.
+      A rising trend indicates either more vulnerabilities being discovered in open-source code, or
+      improved disclosure infrastructure, or both.
+    </p>
+    <div class="chart-wrap" style="margin-top:1rem;">
+      <div id="ld-s3" class="chart-loader">Loading GitHub Advisory data…</div>
+      <div id="cs3" style="width:100%; height:320px; display:none;"></div>
+    </div>
+    <div class="interp-row" style="margin-top:1rem;">
+      <div class="interp-box i-accel">
+        <span class="interp-tag">Accelerationist reads this as…</span>
+        <p>More GHSA advisories means more eyes are on the supply chain — AI-assisted code review
+        tools are finding latent vulnerabilities faster than attackers can exploit them,
+        resulting in proactive disclosure before exploits exist in the wild.</p>
+      </div>
+      <div class="interp-box i-safety">
+        <span class="interp-tag">Safetyist reads this as…</span>
+        <p>The explosion in supply-chain advisories is itself the attack surface expanding.
+        Every open-source library is a potential entry point. AI lowers the bar for
+        finding vulnerabilities in these libraries — but defenders cannot patch dependencies
+        as fast as attackers can scan them.</p>
+      </div>
+      <div class="interp-box i-skeptic">
+        <span class="interp-tag">Skeptic reads this as…</span>
+        <p>GHSA volume growth reflects the maturation of GitHub's disclosure program and
+        broader CNA coverage — not an AI-driven structural change in the vulnerability landscape.
+        Growth was already strong before 2022 and follows a secular trend driven by OSS adoption.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
        METHODOLOGY
   ====================================================== -->
   <section id="s-method">
@@ -797,7 +934,7 @@
     <h2>How This Index Is Built</h2>
     <p>
       The ACLI updates automatically on the first of every month. A Python script
-      queries the NVD 2.0 API and CISA KEV catalog, processes the results, and saves
+      queries five free public databases, processes the results, and saves
       simple JSON data files directly to this GitHub repository. The website reads
       those files client-side — no server required, no cost, fully transparent.
     </p>
@@ -833,18 +970,18 @@
           <td><span class="badge b-live">Live</span></td>
         </tr>
         <tr>
-          <td><a href="https://osv.dev/">OSV.dev (Google)</a></td>
-          <td>Open source package vulnerabilities across npm, PyPA, RustSec, and more</td>
+          <td><a href="https://www.first.org/epss/">EPSS (FIRST.org / Cyentia)</a></td>
+          <td>Monthly exploit probability scores for all CVEs; avg score and % high-risk (≥0.10)</td>
           <td><span class="badge b-live">Live</span></td>
         </tr>
         <tr>
-          <td><a href="https://incidentdatabase.ai/">AI Incident Database</a></td>
-          <td>Documented real-world AI failure and misuse incidents</td>
+          <td><a href="https://www.exploit-db.com/">Exploit-DB</a></td>
+          <td>Public exploit publication counts; % with linked CVE identifiers</td>
           <td><span class="badge b-live">Live</span></td>
         </tr>
         <tr>
-          <td><a href="https://avidml.org/">AVID (AI Vulnerability DB)</a></td>
-          <td>AI model failure modes, prompt injections, adversarial attacks</td>
+          <td><a href="https://github.com/advisories">GitHub Security Advisories (GHSA)</a></td>
+          <td>Reviewed open-source supply chain advisories by publication month</td>
           <td><span class="badge b-live">Live</span></td>
         </tr>
         <tr>
@@ -888,8 +1025,8 @@
 <footer>
   <div class="footer-inner">
     <div>
-      <p>AI Cyber Leverage Index · AI &amp; Law Seminar, Harvard Law School · Spring 2026</p>
-      <p>Data: NVD (NIST), CISA, OSV.dev · Auto-updated via GitHub Actions</p>
+      <p>AI Cyber Leverage Index · AI &amp; Law Seminar · Harvard Law School</p>
+      <p>Data: NVD (NIST) · CISA KEV · EPSS (Cyentia/FIRST) · Exploit-DB · GitHub Advisories · Auto-updated via GitHub Actions</p>
     </div>
     <div>
       <a href="https://github.com/YOUR-USERNAME/ai-cyber-leverage-index" style="font-size:0.78rem; color:var(--text-muted)">
@@ -973,22 +1110,55 @@ function makeSampleData() {
     2019:17300,2020:18300,2021:20100,2022:25100,2023:28900,
     2024:38000,2025:42000
   };
+  // Approximate annual exploit-db publication counts (public exploits)
+  const edbYear = {
+    2003:180,2004:350,2005:480,2006:580,2007:680,2008:750,2009:830,
+    2010:900,2011:920,2012:870,2013:820,2014:900,2015:960,2016:1050,
+    2017:1100,2018:1150,2019:1200,2020:1100,2021:1050,2022:1000,
+    2023:980,2024:950,2025:920
+  };
+  // Approximate annual GitHub Security Advisory counts
+  const ghsaYear = {
+    2017:200,2018:400,2019:800,2020:1400,2021:2000,2022:2800,
+    2023:3600,2024:4400,2025:4800
+  };
   const out = [];
   const rng = (v, spread) => v + (Math.random() - 0.5) * spread;
   for (let yr = 1999; yr <= 2025; yr++) {
     for (let mo = 1; mo <= 12; mo++) {
       if (yr === 2025 && mo > 11) continue;
-      const base = (yearTotals[yr] || 10000) / 12;
+      const base    = (yearTotals[yr] || 10000) / 12;
       const total   = Math.max(10, Math.round(rng(base, base * 0.3)));
       const hiPct   = Math.min(78, Math.max(22, rng(36 + (yr-1999)*0.45, 7)));
       const instPct = Math.min(55, Math.max(4,  rng(8  + Math.max(0,(yr-2008)*0.9), 5)));
       const kev     = yr >= 2022 ? Math.max(0, Math.round(rng(10 + (yr-2022)*5, 8))) : 0;
+
+      // Exploit-DB: monthly count with CVE cross-reference rate growing over time
+      const edbBase = ((edbYear[yr] || 1000) / 12);
+      const edbCount = yr >= 2003 ? Math.max(0, Math.round(rng(edbBase, edbBase * 0.35))) : 0;
+      const edbCvePct = yr >= 2003 ? Math.min(85, Math.max(10, rng(25 + (yr-2003)*1.2, 8))) : 0;
+
+      // GitHub Advisories: monthly count (starts 2017)
+      const ghsaBase = ((ghsaYear[yr] || 0) / 12);
+      const ghsaCount = yr >= 2017 ? Math.max(0, Math.round(rng(ghsaBase, ghsaBase * 0.25))) : 0;
+
+      // EPSS: snapshot stats (available from 2021-05 onwards)
+      // avg EPSS score ~0.01–0.04; % with score ≥ 0.10 roughly 9–14%
+      const hasEpss = (yr > 2021) || (yr === 2021 && mo >= 5);
+      const epssAvg      = hasEpss ? +Math.max(0.008, rng(0.018 + (yr-2021)*0.003, 0.005)).toFixed(6) : null;
+      const epssHighRisk = hasEpss ? +Math.min(20, Math.max(7, rng(10 + (yr-2021)*0.5, 1.5))).toFixed(2) : null;
+
       out.push({
         month: `${yr}-${String(mo).padStart(2,'0')}`,
-        cve_total: total,
-        high_critical_pct:   +hiPct.toFixed(1),
+        cve_total:             total,
+        high_critical_pct:     +hiPct.toFixed(1),
         institutional_cna_pct: +instPct.toFixed(1),
-        kev_additions: kev,
+        kev_additions:         kev,
+        exploitdb_count:       edbCount,
+        exploitdb_with_cve_pct: +edbCvePct.toFixed(1),
+        github_advisory_count: ghsaCount,
+        epss_avg:              epssAvg,
+        epss_high_risk_pct:    epssHighRisk,
       });
     }
   }
@@ -1093,6 +1263,97 @@ function renderCNA(data) {
   };
   show('ld-4','c4');
   Plotly.newPlot('c4', traces, layout, { responsive:true, displayModeBar:false });
+}
+
+// ───────────────────────────────────────────────────
+// Chart S1 — Exploit-DB monthly publications
+// ───────────────────────────────────────────────────
+function renderExploitDB(data) {
+  const filtered = data.filter(d => d.exploitdb_count > 0);
+  if (filtered.length === 0) { show('ld-s1','cs1'); return; }
+  const x  = filtered.map(d => d.month + '-01');
+  const y  = filtered.map(d => d.exploitdb_count);
+  const yp = filtered.map(d => d.exploitdb_with_cve_pct);
+  const traces = [
+    { x, y, type:'scatter', mode:'lines',
+      line:{ color:'rgba(82,192,142,0.3)', width:1 }, name:'Monthly exploits',
+      yaxis:'y', hovertemplate:'<b>%{x|%b %Y}</b><br>Exploits published: %{y:,}<extra></extra>' },
+    { x, y: rollAvg(y, 12), type:'scatter', mode:'lines',
+      line:{ color:'#52c08e', width:2.5 }, name:'12-month avg',
+      yaxis:'y', hovertemplate:'<b>%{x|%b %Y}</b><br>12-mo avg: %{y:.0f}<extra></extra>' },
+    { x, y: yp, type:'scatter', mode:'lines',
+      line:{ color:'rgba(224,82,82,0.55)', width:1.5, dash:'dot' }, name:'% with CVE ref',
+      yaxis:'y2', hovertemplate:'<b>%{x|%b %Y}</b><br>CVE-linked: %{y:.1f}%<extra></extra>' },
+  ];
+  const layout = { ...BASE,
+    yaxis:  { ...BASE.yaxis, title:'Exploits published / month', tickformat:',d' },
+    yaxis2: { ...BASE.yaxis, title:'% linked to CVE', ticksuffix:'%',
+              overlaying:'y', side:'right', showgrid:false, range:[0,100] },
+    shapes: milestoneShapes(), annotations: milestoneAnnotations(),
+    legend: { x:0.02, y:0.97, bgcolor:'rgba(0,0,0,0)', font:{ color:'#9a9188', size:11 } },
+    showlegend: true,
+  };
+  show('ld-s1','cs1');
+  Plotly.newPlot('cs1', traces, layout, { responsive:true, displayModeBar:false });
+}
+
+// ───────────────────────────────────────────────────
+// Chart S2 — EPSS exploit probability over time
+// ───────────────────────────────────────────────────
+function renderEPSS(data) {
+  const filtered = data.filter(d => d.epss_avg !== null && d.epss_avg !== undefined);
+  if (filtered.length === 0) { show('ld-s2','cs2'); return; }
+  const x   = filtered.map(d => d.month + '-01');
+  const yav = filtered.map(d => d.epss_avg);
+  const yhr = filtered.map(d => d.epss_high_risk_pct);
+  const traces = [
+    { x, y: yav, type:'scatter', mode:'lines',
+      line:{ color:'rgba(74,158,218,0.4)', width:1 }, name:'Avg EPSS score',
+      yaxis:'y', hovertemplate:'<b>%{x|%b %Y}</b><br>Avg EPSS: %{y:.4f}<extra></extra>' },
+    { x, y: rollAvg(yav, 6), type:'scatter', mode:'lines',
+      line:{ color:'#4a9eda', width:2.5 }, name:'6-month avg',
+      yaxis:'y', hovertemplate:'<b>%{x|%b %Y}</b><br>6-mo avg: %{y:.4f}<extra></extra>' },
+    { x, y: yhr, type:'scatter', mode:'lines',
+      line:{ color:'rgba(224,82,82,0.55)', width:1.5, dash:'dot' }, name:'% CVEs ≥10% risk',
+      yaxis:'y2', hovertemplate:'<b>%{x|%b %Y}</b><br>≥10% risk: %{y:.1f}%<extra></extra>' },
+  ];
+  const layout = { ...BASE,
+    yaxis:  { ...BASE.yaxis, title:'Average EPSS score' },
+    yaxis2: { ...BASE.yaxis, title:'% CVEs with EPSS ≥ 0.10', ticksuffix:'%',
+              overlaying:'y', side:'right', showgrid:false, range:[0,30] },
+    legend: { x:0.02, y:0.97, bgcolor:'rgba(0,0,0,0)', font:{ color:'#9a9188', size:11 } },
+    showlegend: true,
+  };
+  show('ld-s2','cs2');
+  Plotly.newPlot('cs2', traces, layout, { responsive:true, displayModeBar:false });
+}
+
+// ───────────────────────────────────────────────────
+// Chart S3 — GitHub Security Advisories
+// ───────────────────────────────────────────────────
+function renderGHSA(data) {
+  const filtered = data.filter(d => d.github_advisory_count > 0);
+  if (filtered.length === 0) { show('ld-s3','cs3'); return; }
+  const x = filtered.map(d => d.month + '-01');
+  const y = filtered.map(d => d.github_advisory_count);
+  const traces = [
+    { x, y, type:'bar',
+      marker:{ color:'rgba(74,158,218,0.22)', line:{ color:'rgba(74,158,218,0.6)', width:0.5 } },
+      name:'Monthly advisories',
+      hovertemplate:'<b>%{x|%b %Y}</b><br>Advisories: %{y:,}<extra></extra>' },
+    { x, y: rollAvg(y, 6), type:'scatter', mode:'lines',
+      line:{ color:'#4a9eda', width:2.5 }, name:'6-month avg',
+      hovertemplate:'<b>%{x|%b %Y}</b><br>6-mo avg: %{y:.0f}<extra></extra>' },
+  ];
+  const layout = { ...BASE,
+    yaxis:   { ...BASE.yaxis, title:'GitHub Security Advisories / month', tickformat:',d' },
+    bargap:  0.1,
+    shapes: milestoneShapes(), annotations: milestoneAnnotations(),
+    showlegend: true,
+    legend: { x:0.02, y:0.97, bgcolor:'rgba(0,0,0,0)', font:{ color:'#9a9188', size:11 } },
+  };
+  show('ld-s3','cs3');
+  Plotly.newPlot('cs3', traces, layout, { responsive:true, displayModeBar:false });
 }
 
 // ───────────────────────────────────────────────────
@@ -1226,9 +1487,21 @@ function updateTriangleDot(score) {
 function updateStats(data) {
   const totalCVEs = data.reduce((s, d) => s + d.cve_total, 0);
   const totalKEV  = data.reduce((s, d) => s + (d.kev_additions || 0), 0);
-  document.getElementById('stat-cves').textContent = Math.round(totalCVEs / 1000) + 'k+';
-  document.getElementById('stat-kev').textContent  = totalKEV.toLocaleString();
-  // stat-acli and acli-big are set by updateTriangleDot() once the score is known
+
+  // Compute year range from actual data
+  const years    = [...new Set(data.map(d => d.month.slice(0,4)))].sort();
+  const firstYr  = years[0] || '1999';
+  const lastYr   = years[years.length - 1] || String(new Date().getFullYear());
+  const numYears = years.length;
+
+  document.getElementById('stat-cves').textContent       = (totalCVEs >= 1000)
+    ? Math.round(totalCVEs / 1000) + 'k+'
+    : totalCVEs.toLocaleString();
+  document.getElementById('stat-kev').textContent        = totalKEV.toLocaleString();
+  document.getElementById('stat-years').textContent      = numYears;
+  document.getElementById('stat-years-label').textContent = `Years of data (${firstYr}–${lastYr})`;
+
+  // stat-acli / acli-big are set by updateTriangleDot() once the composite score is known
   document.getElementById('last-updated').textContent = new Date().toLocaleDateString('en-US', { month:'long', year:'numeric' });
 }
 
@@ -1262,9 +1535,149 @@ async function init() {
   renderKEV(data);
   renderCNA(data);
   renderComposite(data);
+  renderExploitDB(data);
+  renderEPSS(data);
+  renderGHSA(data);
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ───────────────────────────────────────────────────
+// INTERACTIVE BACKGROUND — particle network
+// ───────────────────────────────────────────────────
+(function () {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  const PARTICLE_COUNT  = 75;   // number of nodes
+  const CONNECT_DIST    = 160;  // max distance for connection lines
+  const MOUSE_RADIUS    = 200;  // mouse influence radius
+  const SPEED           = 0.28; // base particle speed
+  const DOT_RADIUS      = 1.4;
+  const LINE_OPACITY    = 0.13; // base opacity for connection lines
+  const DOT_OPACITY     = 0.35;
+
+  let W, H, dpr;
+  let mouse = { x: -9999, y: -9999 };
+
+  // Particle colors — muted tones that complement the dark palette
+  const COLORS = ['#3a4a5e', '#2d5247', '#4a3d2e', '#2e3d4a', '#3d3343'];
+
+  function resize() {
+    dpr    = window.devicePixelRatio || 1;
+    W      = window.innerWidth;
+    H      = window.innerHeight;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+  }
+
+  function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+  function makeParticle() {
+    const angle = Math.random() * Math.PI * 2;
+    return {
+      x:    randomBetween(0, W),
+      y:    randomBetween(0, H),
+      vx:   Math.cos(angle) * SPEED * randomBetween(0.5, 1.5),
+      vy:   Math.sin(angle) * SPEED * randomBetween(0.5, 1.5),
+      r:    randomBetween(0.8, DOT_RADIUS),
+      col:  COLORS[Math.floor(Math.random() * COLORS.length)],
+    };
+  }
+
+  // Initialise particles
+  let particles = [];
+  function initParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(makeParticle());
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Subtle radial vignette — darker at corners, very slightly lighter at center
+    const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.hypot(W, H) / 2);
+    grad.addColorStop(0,   'rgba(14,14,20, 0.0)');
+    grad.addColorStop(1,   'rgba(6, 6, 10, 0.55)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Update positions, bounce off edges
+    particles.forEach(p => {
+      // Gentle mouse repulsion
+      const dx = p.x - mouse.x;
+      const dy = p.y - mouse.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < MOUSE_RADIUS * MOUSE_RADIUS && d2 > 0) {
+        const force = (1 - Math.sqrt(d2) / MOUSE_RADIUS) * 0.6;
+        p.vx += (dx / Math.sqrt(d2)) * force;
+        p.vy += (dy / Math.sqrt(d2)) * force;
+      }
+
+      // Speed cap
+      const speed = Math.hypot(p.vx, p.vy);
+      if (speed > SPEED * 3) { p.vx *= SPEED * 3 / speed; p.vy *= SPEED * 3 / speed; }
+
+      // Damping drift back to base speed
+      if (speed > SPEED) { p.vx *= 0.995; p.vy *= 0.995; }
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      // Soft wrap at edges
+      if (p.x < -20)   p.x = W + 20;
+      if (p.x > W + 20) p.x = -20;
+      if (p.y < -20)   p.y = H + 20;
+      if (p.y > H + 20) p.y = -20;
+    });
+
+    // Draw connection lines
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const a = particles[i], b = particles[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * LINE_OPACITY;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = `rgba(90,110,140,${alpha.toFixed(3)})`;
+          ctx.lineWidth = 0.7;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw dots
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.col + Math.round(DOT_OPACITY * 255).toString(16).padStart(2,'0');
+      ctx.fill();
+    });
+
+    requestAnimationFrame(tick);
+  }
+
+  // Track mouse
+  document.addEventListener('mousemove', e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  }, { passive: true });
+  document.addEventListener('mouseleave', () => {
+    mouse.x = -9999; mouse.y = -9999;
+  }, { passive: true });
+
+  // Init
+  resize();
+  initParticles();
+  tick();
+  window.addEventListener('resize', () => { resize(); initParticles(); });
+})();
 </script>
 </body>
 </html>
