@@ -241,7 +241,7 @@
       display: block;
       margin-bottom: 1rem;
     }
-    .camp p { font-size: 0.84rem; color: var(--text-muted); margin: 0; line-height: 1.55; }
+    .camp p { font-size: 0.84rem; color: var(--text); margin: 0; line-height: 1.55; }
     .accel .camp-name, .accel .camp-stance { color: var(--green); }
     .safety .camp-name, .safety .camp-stance { color: var(--red); }
     .skeptic .camp-name, .skeptic .camp-stance { color: var(--orange); }
@@ -301,7 +301,7 @@
       display: block;
       margin-bottom: 0.5rem;
     }
-    .interp-box p { font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.55; }
+    .interp-box p { font-size: 0.82rem; color: var(--text); margin: 0; line-height: 1.55; }
     .i-accel .interp-tag { color: var(--green); }
     .i-safety .interp-tag { color: var(--red); }
     .i-skeptic .interp-tag { color: var(--orange); }
@@ -337,47 +337,26 @@
       font-weight: 700;
       line-height: 1;
     }
-    .big-number.lean-safety { color: var(--red); }
-    .big-number.lean-accel  { color: var(--blue); }
-    .big-number.lean-neutral { color: var(--gray); }
+    .big-number.lean-safety  { color: var(--red); }
+    .big-number.lean-accel   { color: var(--green); }
+    .big-number.lean-neutral { color: var(--orange); }
     .big-number.lean-default { color: var(--orange); }
     .score-meta h3 { font-size: 1.25rem; margin-bottom: 0.3rem; }
     .score-meta p { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
 
-    .scale-wrap {
-      padding: 1.5rem;
+    .triangle-wrap {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 8px;
+      padding: 1.5rem 1rem 1.2rem;
       margin: 1.5rem 0;
     }
-    .scale-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.72rem;
+    .triangle-caption {
+      text-align: center;
+      font-size: 0.78rem;
       color: var(--text-muted);
-      margin-bottom: 0.7rem;
-    }
-    .scale-bar {
-      height: 5px;
-      background: linear-gradient(to right, var(--blue), #333, var(--red));
-      border-radius: 3px;
-      position: relative;
-      margin-bottom: 0.4rem;
-    }
-    .scale-needle {
-      position: absolute;
-      width: 12px; height: 12px;
-      background: var(--text);
-      border-radius: 50%;
-      top: -3.5px;
-      transform: translateX(-50%);
-      transition: left 0.4s ease;
-    }
-    .scale-footer {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.7rem;
+      margin: 0.4rem 0 0;
+      line-height: 1.5;
     }
 
     /* ============================================================
@@ -586,6 +565,13 @@
       A persistent upward trend post-2022 would be one of the strongest signals that
       AI is <em>qualitatively</em> changing what gets discovered, not merely increasing volume.
     </p>
+    <p>
+      <strong>How to read this:</strong> The chart shows the percentage of all CVEs that month
+      rated High or Critical. The <strong style="color:var(--red)">red line</strong> is a
+      12-month rolling average to smooth out noise. A flat line means the share is stable;
+      a rising line means an increasing fraction of newly discovered bugs are severe ones.
+      Hover over any point to see the exact percentage for that month.
+    </p>
     <div class="chart-wrap">
       <div class="loading" id="ld-2"><div class="spinner"></div><span>Loading severity data…</span></div>
       <div id="c2" style="display:none; width:100%; height:340px;"></div>
@@ -622,6 +608,15 @@
       The CISA KEV catalog launched in November 2021. Watching its monthly growth rate
       is the most direct empirical signal available on whether exploitation pace is
       accelerating in the AI era.
+    </p>
+    <p>
+      <strong>How to read this:</strong> Each <strong style="color:var(--red)">red bar</strong>
+      shows how many new CVEs were confirmed as actively exploited that month.
+      The line is a 3-month average. Because this catalog only started in late 2021,
+      the chart covers a shorter window than the others — but it is the most direct
+      measure of attacker behavior available. Taller bars over time = faster exploitation.
+      Note that the first month (November 2021) appears large because CISA added a
+      backlog of pre-existing exploited vulnerabilities when launching the catalog.
     </p>
     <div class="chart-wrap">
       <div class="loading" id="ld-3"><div class="spinner"></div><span>Loading CISA KEV data…</span></div>
@@ -661,6 +656,14 @@
       rises sharply post-2022, it suggests AI is concentrating vulnerability discovery
       among the best-resourced defenders.
     </p>
+    <p>
+      <strong>How to read this:</strong> The <strong style="color:var(--green)">green shaded area</strong>
+      shows what percentage of all CVEs in a given month were filed by large institutional
+      actors (Google, Microsoft, Apple, etc.) rather than individual researchers or smaller
+      vendors. A rising trend means big organizations are finding a larger share of all bugs —
+      consistent with AI-assisted bulk scanning. The orange dashed lines again mark AI milestones.
+      Look for whether the line bends upward after key releases.
+    </p>
     <div class="chart-wrap">
       <div class="loading" id="ld-4"><div class="spinner"></div><span>Loading attribution data…</span></div>
       <div id="c4" style="display:none; width:100%; height:340px;"></div>
@@ -694,20 +697,83 @@
       advantage); near-zero is the Skeptic's preferred outcome.
     </p>
 
-    <div class="scale-wrap">
-      <div class="scale-header">
-        <span>Defender advantage</span>
-        <span>Ambiguous / Contested</span>
-        <span>Attacker advantage</span>
-      </div>
-      <div class="scale-bar">
-        <div class="scale-needle" id="needle" style="left:55%"></div>
-      </div>
-      <div class="scale-footer">
-        <span style="color:var(--green)">← Accelerationist wins</span>
-        <span style="color:var(--gray)">Skeptic wins</span>
-        <span style="color:var(--red)">Safetyist wins →</span>
-      </div>
+    <div class="triangle-wrap">
+      <svg id="acli-triangle" viewBox="-20 0 540 415" xmlns="http://www.w3.org/2000/svg" style="width:100%; display:block;">
+        <defs>
+          <!-- Soft glow from each corner into the triangle interior -->
+          <radialGradient id="g-sk" cx="50%" cy="15%" r="55%">
+            <stop offset="0%" stop-color="rgba(224,124,58,0.18)"/>
+            <stop offset="100%" stop-color="rgba(224,124,58,0)"/>
+          </radialGradient>
+          <radialGradient id="g-ac" cx="14%" cy="86%" r="55%">
+            <stop offset="0%" stop-color="rgba(82,192,142,0.18)"/>
+            <stop offset="100%" stop-color="rgba(82,192,142,0)"/>
+          </radialGradient>
+          <radialGradient id="g-sa" cx="86%" cy="86%" r="55%">
+            <stop offset="0%" stop-color="rgba(224,82,82,0.18)"/>
+            <stop offset="100%" stop-color="rgba(224,82,82,0)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Triangle vertices: Skeptic=top, Accelerationist=bottom-left, Safetyist=bottom-right -->
+        <!-- Centroid at (250, 247) -->
+        <polygon points="250,62 82,342 418,342"
+          fill="rgba(255,255,255,0.018)"
+          stroke="#2d2d2d" stroke-width="1.5" stroke-linejoin="round"/>
+        <polygon points="250,62 82,342 418,342" fill="url(#g-sk)"/>
+        <polygon points="250,62 82,342 418,342" fill="url(#g-ac)"/>
+        <polygon points="250,62 82,342 418,342" fill="url(#g-sa)"/>
+
+        <!-- Median lines from each vertex to midpoint of opposite side -->
+        <!-- Skeptic→midpoint(Accel,Safety): (250,62)→(250,342) -->
+        <line x1="250" y1="62"  x2="250" y2="342" stroke="#222" stroke-width="0.8" stroke-dasharray="3,5"/>
+        <!-- Accel→midpoint(Skeptic,Safety): (82,342)→(334,202) -->
+        <line x1="82"  y1="342" x2="334" y2="202" stroke="#222" stroke-width="0.8" stroke-dasharray="3,5"/>
+        <!-- Safety→midpoint(Skeptic,Accel): (418,342)→(166,202) -->
+        <line x1="418" y1="342" x2="166" y2="202" stroke="#222" stroke-width="0.8" stroke-dasharray="3,5"/>
+
+        <!-- Centroid dot (small, subtle) -->
+        <circle cx="250" cy="249" r="2.5" fill="#2e2e2e" stroke="#444" stroke-width="1"/>
+
+        <!-- Corner vertex dots -->
+        <circle cx="250" cy="62"  r="5" fill="#e07c3a"/>
+        <circle cx="82"  cy="342" r="5" fill="#52c08e"/>
+        <circle cx="418" cy="342" r="5" fill="#e05252"/>
+
+        <!-- SKEPTIC label (top center) -->
+        <text x="250" y="43" text-anchor="middle"
+          fill="#e07c3a" font-size="12" font-weight="700"
+          font-family="Inter, sans-serif" letter-spacing="0.1em">SKEPTIC</text>
+        <text x="250" y="27" text-anchor="middle"
+          fill="#58514d" font-size="9.5" font-family="Inter, sans-serif">AI is not the variable</text>
+
+        <!-- ACCELERATIONIST label (bottom left) -->
+        <text x="82" y="368" text-anchor="middle"
+          fill="#52c08e" font-size="11" font-weight="700"
+          font-family="Inter, sans-serif" letter-spacing="0.07em">ACCELERATIONIST</text>
+        <text x="82" y="382" text-anchor="middle"
+          fill="#58514d" font-size="9.5" font-family="Inter, sans-serif">AI favors defenders</text>
+
+        <!-- SAFETYIST label (bottom right) -->
+        <text x="418" y="368" text-anchor="middle"
+          fill="#e05252" font-size="12" font-weight="700"
+          font-family="Inter, sans-serif" letter-spacing="0.1em">SAFETYIST</text>
+        <text x="418" y="382" text-anchor="middle"
+          fill="#58514d" font-size="9.5" font-family="Inter, sans-serif">AI favors attackers</text>
+
+        <!-- Current position dot — moved by updateTriangleDot() in JS -->
+        <circle id="tri-ring" cx="250" cy="249" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+        <circle id="tri-dot"  cx="250" cy="249" r="7"  fill="white" opacity="0.88"/>
+
+        <!-- Label for current dot — also repositioned by JS -->
+        <text id="tri-label-1" x="273" y="243" fill="#9a9188" font-size="10" font-family="Inter, sans-serif">Current position</text>
+        <text id="tri-label-2" x="273" y="256" fill="#9a9188" font-size="10" font-family="Inter, sans-serif">ACLI: …</text>
+      </svg>
+      <p class="triangle-caption">
+        Each vertex is a camp's prediction. The dot shows where current data places the evidence —
+        closer to a corner means stronger support for that camp's prediction.
+        The dashed lines connect each vertex to the midpoint of the opposite side.
+      </p>
     </div>
 
     <div class="score-display">
@@ -1070,6 +1136,88 @@ function renderComposite(data) {
     }]
   };
   Plotly.newPlot('c5', traces, layout, { responsive:true, displayModeBar:false });
+
+  // Use the last COMPLETE year's score — exclude the current year because
+  // it only has partial data, which makes volume look artificially low.
+  const currentYear = String(new Date().getFullYear());
+  const completeIdx = years.reduce((last, yr, i) => yr !== currentYear ? i : last, 0);
+  updateTriangleDot(scores[completeIdx]);
+}
+
+// ───────────────────────────────────────────────────
+// Triangle dot — always inside via barycentric math
+// ───────────────────────────────────────────────────
+function updateTriangleDot(score) {
+  // Triangle vertices (match the SVG polygon points exactly)
+  const SK = { x: 250, y:  62 };  // Skeptic  — top
+  const AC = { x:  82, y: 342 };  // Accel    — bottom-left
+  const SA = { x: 418, y: 342 };  // Safetyist — bottom-right
+
+  // Centroid — guaranteed inside the triangle
+  const C = {
+    x: (SK.x + AC.x + SA.x) / 3,   // 250
+    y: (SK.y + AC.y + SA.y) / 3,   // 248.7
+  };
+
+  // Normalise score to [-1, +1]; beyond ±3 is treated as the extreme
+  const norm = Math.max(-1, Math.min(1, score / 3));
+
+  // Move from centroid toward Safetyist (positive) or Accelerationist (negative)
+  // Cap at 80% so the dot never touches the corner itself
+  const t      = Math.abs(norm) * 0.80;
+  const target = norm > 0 ? SA : AC;
+
+  const dotX = C.x + t * (target.x - C.x);
+  const dotY = C.y + t * (target.y - C.y);
+
+  // Update the two SVG circles
+  ['tri-ring', 'tri-dot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('cx', dotX); el.setAttribute('cy', dotY); }
+  });
+
+  // Reposition the label: keep it to the right if space allows, otherwise left
+  const labelX = dotX < 330 ? dotX + 22 : dotX - 110;
+  const label1 = document.getElementById('tri-label-1');
+  const label2 = document.getElementById('tri-label-2');
+  const scoreStr = (score >= 0 ? '+' : '') + score.toFixed(2);
+  if (label1) { label1.setAttribute('x', labelX); label1.setAttribute('y', dotY - 6); }
+  if (label2) { label2.setAttribute('x', labelX); label2.setAttribute('y', dotY + 7);
+                label2.textContent = 'ACLI: ' + scoreStr; }
+
+  // Keep the hero score in sync
+  document.getElementById('stat-acli').textContent = scoreStr;
+
+  // Update the big number — text and colour
+  const bigEl = document.getElementById('acli-big');
+  if (bigEl) {
+    bigEl.textContent = scoreStr;
+    bigEl.className = 'big-number ' +
+      (score >  0.5 ? 'lean-safety' :
+       score < -0.5 ? 'lean-accel'  : 'lean-neutral');
+  }
+
+  // Update verdict heading and description to match actual score direction
+  const verdictEl = document.getElementById('acli-verdict');
+  const descEl    = document.getElementById('acli-desc');
+  if (verdictEl && descEl) {
+    if (score > 1.0) {
+      verdictEl.textContent = 'Strong Safetyist signal — attacker advantage growing';
+      descEl.textContent    = 'CVE growth, severity trends, and exploitation velocity are all above baseline, consistent with the Safetyist prediction that AI is disproportionately empowering attackers.';
+    } else if (score > 0.5) {
+      verdictEl.textContent = 'Mild Safetyist lean — data not yet conclusive';
+      descEl.textContent    = 'Above-trend CVE growth and exploitation signals are present, but not yet strong enough to definitively favour any camp.';
+    } else if (score < -1.0) {
+      verdictEl.textContent = 'Strong Accelerationist signal — defensive gains visible';
+      descEl.textContent    = 'CVE growth is well below historical trend and exploitation velocity appears contained — consistent with AI-assisted defensive tools gaining ground.';
+    } else if (score < -0.5) {
+      verdictEl.textContent = 'Mild Accelerationist lean — data not yet conclusive';
+      descEl.textContent    = 'Below-trend CVE growth suggests possible defensive gains, but the signal is not yet strong enough to be definitive.';
+    } else {
+      verdictEl.textContent = 'Ambiguous — Skeptic-consistent range';
+      descEl.textContent    = 'Current data falls within the historical baseline range. No structural break attributable to AI is visible, which is consistent with the Skeptic prediction that AI is not the meaningful variable.';
+    }
+  }
 }
 
 // ───────────────────────────────────────────────────
@@ -1080,7 +1228,7 @@ function updateStats(data) {
   const totalKEV  = data.reduce((s, d) => s + (d.kev_additions || 0), 0);
   document.getElementById('stat-cves').textContent = Math.round(totalCVEs / 1000) + 'k+';
   document.getElementById('stat-kev').textContent  = totalKEV.toLocaleString();
-  document.getElementById('stat-acli').textContent = '+0.4';
+  // stat-acli and acli-big are set by updateTriangleDot() once the score is known
   document.getElementById('last-updated').textContent = new Date().toLocaleDateString('en-US', { month:'long', year:'numeric' });
 }
 
