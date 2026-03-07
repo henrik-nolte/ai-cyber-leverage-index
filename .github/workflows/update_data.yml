@@ -1,0 +1,69 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ACLI — Monthly Data Update Workflow
+#
+# This GitHub Actions workflow runs automatically on the 1st of every month.
+# It also has a "Run workflow" button so you can trigger it manually anytime.
+#
+# What it does:
+#   1. Sets up Python
+#   2. Installs the "requests" library
+#   3. Runs fetch_data.py (queries NVD API + CISA KEV)
+#   4. Saves updated data/nvd_monthly.json back to the repository
+#   5. Commits and pushes the changes
+#
+# After the workflow runs, the website automatically shows fresh data —
+# no manual work needed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Monthly Data Update
+
+on:
+  # Runs at 06:00 UTC on the 1st of every month
+  schedule:
+    - cron: "0 6 1 * *"
+
+  # Also allows manual triggering from the GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  fetch-and-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Needed to commit back to the repository
+
+    steps:
+
+      # Step 1: Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python 3.11
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Step 3: Install the only dependency (requests)
+      - name: Install dependencies
+        run: pip install requests
+
+      # Step 4: Run the data fetcher
+      # The NVD_API_KEY secret is set in your repo's Settings → Secrets
+      - name: Fetch NVD and CISA KEV data
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: python scripts/fetch_data.py
+
+      # Step 5: Commit and push the updated data file
+      - name: Commit updated data
+        run: |
+          git config user.name  "ACLI Data Bot"
+          git config user.email "actions@github.com"
+          git add data/
+          # Only commit if there are actual changes
+          if git diff --staged --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "chore: monthly data update $(date +%Y-%m)"
+            git push
+          fi
