@@ -1600,18 +1600,91 @@ function obsGHSA(data) {
 // Chart 5 — Composite ACLI
 // ───────────────────────────────────────────────────
 function renderComposite(data) {
-  // Aggregate annual CVE totals
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const mean  = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+
+  // ── Step 1: Pre-compute dataset-wide baselines ───────────────────
+  // Severity baseline: average high_critical_pct across months with CVSS data
+  const allSevPcts  = data.filter(d => d.high_critical_pct > 0).map(d => d.high_critical_pct);
+  const baseSev     = mean(allSevPcts);
+
+  // KEV baseline: average monthly KEV-to-CVE ratio across months where KEV data exists
+  const kevMonths   = data.filter(d => d.kev_additions > 0);
+  const baseKevRate = kevMonths.length
+    ? kevMonths.reduce((s, d) => s + d.kev_additions, 0) /
+      kevMonths.reduce((s, d) => s + d.cve_total, 0)
+    : null;
+
+  // EPSS baseline: average high-risk percentage across all months with EPSS data
+  const epssMonths  = data.filter(d => d.epss_high_risk_pct != null);
+  const baseEpss    = epssMonths.length ? mean(epssMonths.map(d => d.epss_high_risk_pct)) : null;
+
+  // Exploit-DB baseline: average monthly EDB-to-CVE ratio across months where EDB exists
+  const edbMonths   = data.filter(d => d.exploitdb_count > 0);
+  const baseEdbRate = edbMonths.length
+    ? edbMonths.reduce((s, d) => s + d.exploitdb_count, 0) /
+      edbMonths.reduce((s, d) => s + d.cve_total, 0)
+    : null;
+
+  // ── Step 2: Aggregate monthly records into annual buckets ────────
   const byYear = {};
   data.forEach(d => {
     const y = d.month.slice(0, 4);
-    byYear[y] = (byYear[y] || 0) + d.cve_total;
+    if (!byYear[y]) byYear[y] = { cve: 0, hc: 0, hcN: 0, kev: 0, epssSum: 0, epssN: 0, edb: 0 };
+    const b = byYear[y];
+    b.cve += d.cve_total;
+    if (d.high_critical_pct > 0) { b.hc += d.high_critical_pct; b.hcN++; }
+    b.kev += d.kev_additions;
+    if (d.epss_high_risk_pct != null) { b.epssSum += d.epss_high_risk_pct; b.epssN++; }
+    b.edb += d.exploitdb_count;
   });
+
   const years = Object.keys(byYear).sort();
+
+  // ── Step 3: Compute five-signal composite score per year ─────────
   const scores = years.map((yr, i) => {
     if (i === 0) return 0;
-    const growth = (byYear[yr] - byYear[years[i-1]]) / byYear[years[i-1]];
-    return +((growth - 0.08) / 0.12).toFixed(2);
+    const cur  = byYear[yr];
+    const prev = byYear[years[i - 1]];
+
+    // Signal 1 — CVE volume growth vs 8% expected baseline  (weight 0.25, always available)
+    const growth = prev.cve > 0 ? (cur.cve - prev.cve) / prev.cve : 0;
+    const s1 = clamp((growth - 0.08) / 0.15, -1, 1);
+
+    // Signal 2 — Severity escalation vs dataset-wide average  (weight 0.20)
+    const yrSev = cur.hcN > 0 ? cur.hc / cur.hcN : null;
+    const s2    = (yrSev != null && baseSev > 0) ? clamp((yrSev - baseSev) / 10, -1, 1) : null;
+
+    // Signal 3 — KEV exploitation gap vs baseline rate  (weight 0.30, available 2021+)
+    const kevRate = cur.cve > 0 ? cur.kev / cur.cve : null;
+    const s3      = (cur.kev > 0 && baseKevRate)
+                    ? clamp((kevRate - baseKevRate) / baseKevRate, -1, 1) : null;
+
+    // Signal 4 — EPSS high-risk concentration vs baseline  (weight 0.15, available 2021+)
+    const yrEpss = cur.epssN > 0 ? cur.epssSum / cur.epssN : null;
+    const s4     = (yrEpss != null && baseEpss != null && baseEpss > 0)
+                   ? clamp((yrEpss - baseEpss) / baseEpss, -1, 1) : null;
+
+    // Signal 5 — Exploit-DB supply vs baseline rate  (weight 0.10, available 2004+)
+    const edbRate = (cur.cve > 0 && cur.edb > 0) ? cur.edb / cur.cve : null;
+    const s5      = (edbRate != null && baseEdbRate)
+                    ? clamp((edbRate - baseEdbRate) / baseEdbRate, -1, 1) : null;
+
+    // Weighted composite — unused signal weights redistributed proportionally
+    const pool   = [
+      { val: s1, w: 0.25 },
+      { val: s2, w: 0.20 },
+      { val: s3, w: 0.30 },
+      { val: s4, w: 0.15 },
+      { val: s5, w: 0.10 },
+    ].filter(x => x.val !== null);
+    const totalW = pool.reduce((s, x) => s + x.w, 0);
+    return totalW > 0
+      ? +pool.reduce((s, x) => s + x.val * (x.w / totalW), 0).toFixed(2)
+      : 0;
   });
+
+  // ── Step 4: Render chart (same layout as before) ─────────────────
   const colors = scores.map(s =>
     s > 0.5  ? 'rgba(224,82,82,0.7)'   :   // Safetyist lean → red
     s < -0.5 ? 'rgba(82,192,142,0.7)'  :   // Accelerationist lean → green
@@ -1624,19 +1697,20 @@ function renderComposite(data) {
     name: 'ACLI score',
   }];
   const layout = { ...BASE,
-    yaxis: { ...BASE.yaxis, title:'ACLI score', zeroline:true, zerolinecolor:'#383838', zerolinewidth:1.5 },
+    yaxis: { ...BASE.yaxis, title: 'ACLI score', range: [-1.2, 1.2],
+             zeroline: true, zerolinecolor: '#383838', zerolinewidth: 1.5 },
     showlegend: false,
     margin: { ...BASE.margin, t: 40 },
     shapes: [{
-      type:'rect', x0:'2022', x1: String(new Date().getFullYear() + 1),
-      y0:-4, y1:4, fillcolor:'rgba(224,124,58,0.04)', line:{ width:0 }
+      type: 'rect', x0: '2022', x1: String(new Date().getFullYear() + 1),
+      y0: -1.2, y1: 1.2, fillcolor: 'rgba(224,124,58,0.04)', line: { width: 0 }
     }],
     annotations: [{
-      x:'2022', y: 3.2, text:'AI era →', showarrow:false,
-      font:{ color:'#e07c3a', size:10 }
+      x: '2022', y: 1.08, text: 'AI era →', showarrow: false,
+      font: { color: '#e07c3a', size: 10 }
     }]
   };
-  Plotly.newPlot('c5', traces, layout, { responsive:true, displayModeBar:false });
+  Plotly.newPlot('c5', traces, layout, { responsive: true, displayModeBar: false });
 
   // Use the last COMPLETE year's score — exclude the current year because
   // it only has partial data, which makes volume look artificially low.
